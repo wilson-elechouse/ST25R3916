@@ -16,7 +16,7 @@ const int kPinSS   = 5;
 const int kPinIRQ  = 4;
 const int kPinLED  = 2;    // 感应到卡时常亮的 LED
 
-SPIClass    gSPI(VSPI);
+SPIClass gSPI(0);
 RfalRfST25R3916Class gReaderHardware(&gSPI, kPinSS, kPinIRQ);
 RfalNfcClass gNFCReader(&gReaderHardware);
 
