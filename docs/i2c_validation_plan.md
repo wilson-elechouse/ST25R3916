@@ -82,6 +82,7 @@ Pass criteria:
 Target example:
 
 - `examples/ESP32_I2C_scan_14443A/ESP32_I2C_scan_14443A.ino`
+  Current library path: `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443A/`
 
 Goal:
 
@@ -104,6 +105,7 @@ Minimum hardware repetition:
 Target example:
 
 - `examples/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
+  Current library path: `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443A_15693/`
 
 Goal:
 

@@ -11,18 +11,18 @@ working on ESP32.
 The repository already contains an I2C-oriented constructor and multiple
 low-level I2C transaction branches:
 
-- `ST25R3916_110/src/rfal_rfst25r3916.cpp`
+- `ST25R3916_ELECHOUSE/src/rfal_rfst25r3916.cpp`
   - `RfalRfST25R3916Class(TwoWire *i2c, int int_pin)`
   - sets `i2c_enabled = true`
-- `ST25R3916_110/src/st25r3916_com.cpp`
+- `ST25R3916_ELECHOUSE/src/st25r3916_com.cpp`
   - register read/write
   - FIFO read/write
   - PTMem read/write
   - direct command execution
   - test register read/write
-- `ST25R3916_110/src/st25r3916.cpp`
+- `ST25R3916_ELECHOUSE/src/st25r3916.cpp`
   - shared chip initialization still runs for both SPI and I2C
-- `ST25R3916_110/src/st25r3916_interrupt.cpp`
+- `ST25R3916_ELECHOUSE/src/st25r3916_interrupt.cpp`
   - shared IRQ path still runs for both SPI and I2C
 
 ## Status Matrix
@@ -139,9 +139,9 @@ This is promising, but not yet validated on I2C:
 The repository now has the minimum example artifacts for bring-up, but still
 lacks the hardware closure needed to claim support:
 
-- `examples/ESP32_I2C_probe_chip/ESP32_I2C_probe_chip.ino`
-- `examples/ESP32_I2C_scan_14443A/ESP32_I2C_scan_14443A.ino`
-- `examples/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
+- `examples/I2C/ESP32_I2C_probe_chip/ESP32_I2C_probe_chip.ino`
+- `examples/I2C/ESP32_I2C_scan_14443A/ESP32_I2C_scan_14443A.ino`
+- `examples/I2C/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
 - compile closure
 - known-good hardware validation results
 

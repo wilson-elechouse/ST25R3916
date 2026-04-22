@@ -5,14 +5,14 @@ The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C basic bring
 
 ## Repository layout
 
-- `ST25R3916_110/`
+- `ST25R3916_ELECHOUSE/`
   - ST25R3916/ST25R3916B Arduino library.
 - `NFC-RFAL/`
   - RFAL dependency used by the ST25R3916 library.
-- `ST25R3916_110/examples/`
-  - Curated ESP32 examples for SPI bring-up, MF1 tooling, and I2C bring-up.
-- `ESP32_ST25R3916_reading_14443AB_15693/`
-  - Top-level compatibility sketch that mirrors the multi-protocol SPI example.
+- `ST25R3916_ELECHOUSE/examples/SPI/`
+  - Curated ESP32 SPI examples.
+- `ST25R3916_ELECHOUSE/examples/I2C/`
+  - Curated ESP32 I2C examples.
 - `docs/`
   - ESP32 SPI baseline and upstream sync policy for this fork.
 
@@ -29,7 +29,7 @@ The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C basic bring
 Install both library folders into your Arduino libraries path:
 
 1. `NFC-RFAL`
-2. `ST25R3916_110`
+2. `ST25R3916_ELECHOUSE`
 
 Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
 
@@ -58,6 +58,7 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
   - Read-only dump across a sector range with trailer skipping.
 - `ESP32_SPI_mf1_s70_serial_tool`
   - Interactive serial tool for read-only MF1 block/sector dump and export.
+  Path: `ST25R3916_ELECHOUSE/examples/SPI/`
 
 ### Default I2C wiring
 
@@ -79,11 +80,12 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
   - Continuous I2C polling with insert/remove reporting. Intended to replace repeated UID spam during long-running scan demos.
 - `ESP32_I2C_mf1_s70_read_write_test`
   - Safe MIFARE Classic S70 block write/read/restore test over I2C with default Key A.
+  Path: `ST25R3916_ELECHOUSE/examples/I2C/`
 
 ## Notes
 
 - SPI examples use `SPIClass(VSPI)`.
 - I2C examples assume the caller wants the library sketches to own `Wire.begin(...)` with the default ESP32 pins shown above.
 - I2C on ESP32 now avoids doing `Wire` transactions in the hardware ISR path; IRQs are drained in normal context.
-- Optional serial debug logging is controlled through `ST25R3916_ENABLE_DEBUG_LOG` in `ST25R3916_110/src/st25r3916_config.h`.
+- Optional serial debug logging is controlled through `ST25R3916_ENABLE_DEBUG_LOG` in `ST25R3916_ELECHOUSE/src/st25r3916_config.h`.
 - The original archive is kept in the repository for reference, but the extracted source folders are the maintained path.

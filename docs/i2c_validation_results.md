@@ -7,11 +7,11 @@ ESP32 + ST25R3916 basic bring-up and `ISO14443A` scanning.
 
 ## Implemented I2C Artifacts
 
-- `ST25R3916_110/examples/ESP32_I2C_probe_chip/ESP32_I2C_probe_chip.ino`
-- `ST25R3916_110/examples/ESP32_I2C_scan_14443A/ESP32_I2C_scan_14443A.ino`
-- `ST25R3916_110/examples/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
-- `ST25R3916_110/examples/ESP32_I2C_polling_hotplug/ESP32_I2C_polling_hotplug.ino`
-- `ST25R3916_110/examples/ESP32_I2C_mf1_s70_read_write_test/ESP32_I2C_mf1_s70_read_write_test.ino`
+- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_probe_chip/ESP32_I2C_probe_chip.ino`
+- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443A/ESP32_I2C_scan_14443A.ino`
+- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
+- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_polling_hotplug/ESP32_I2C_polling_hotplug.ino`
+- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_mf1_s70_read_write_test/ESP32_I2C_mf1_s70_read_write_test.ino`
 - low-level I2C transaction result checks in `st25r3916_com.cpp`
 - I2C-safe init branching in `rfal_rfst25r3916.cpp`
 
@@ -20,7 +20,7 @@ ESP32 + ST25R3916 basic bring-up and `ISO14443A` scanning.
 The current I2C examples compile for:
 
 - board: `esp32:esp32:esp32`
-- library layout: local `NFC-RFAL` + `ST25R3916_110`
+- library layout: local `NFC-RFAL` + `ST25R3916_ELECHOUSE`
 
 ## Validated Hardware Setup
 
