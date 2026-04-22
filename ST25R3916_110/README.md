@@ -30,6 +30,7 @@ It depends on the sibling `NFC-RFAL` library folder from the same repository.
 - `ESP32_I2C_probe_chip`
 - `ESP32_I2C_scan_14443A`
 - `ESP32_I2C_scan_14443A_15693`
+- `ESP32_I2C_polling_hotplug`
 
 ## Notes
 

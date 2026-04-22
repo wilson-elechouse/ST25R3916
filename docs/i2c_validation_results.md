@@ -10,6 +10,7 @@ ESP32 + ST25R3916 basic bring-up and `ISO14443A` scanning.
 - `ST25R3916_110/examples/ESP32_I2C_probe_chip/ESP32_I2C_probe_chip.ino`
 - `ST25R3916_110/examples/ESP32_I2C_scan_14443A/ESP32_I2C_scan_14443A.ino`
 - `ST25R3916_110/examples/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
+- `ST25R3916_110/examples/ESP32_I2C_polling_hotplug/ESP32_I2C_polling_hotplug.ino`
 - low-level I2C transaction result checks in `st25r3916_com.cpp`
 - I2C-safe init branching in `rfal_rfst25r3916.cpp`
 
@@ -56,12 +57,21 @@ The current I2C examples compile for:
 - observed UID: `D9 A9 CE 70`
 - result: extended I2C scan remains stable with `A + V` polling enabled
 
+### `ESP32_I2C_polling_hotplug`
+
+- initialization: passed
+- insert detection with current `ISO14443A` card: passed
+- observed line: `Card inserted: ISO14443A D9 A9 CE 70`
+- result: I2C hotplug example no longer floods repeated UID lines during steady presence
+
 ## Known Limits
 
 - no `ISO15693` card result has been recorded yet, so the `15693` path is still
   only partially validated
-- the current scan examples intentionally deactivate after each activation, so
-  a stationary card will be printed repeatedly
+- `ESP32_I2C_scan_14443A` and `ESP32_I2C_scan_14443A_15693` intentionally
+  deactivate after each activation, so a stationary card will be printed repeatedly
+- `ESP32_I2C_polling_hotplug` is the preferred long-running demo when insert/remove
+  behaviour matters
 - I2C support should still be treated as first-pass ESP32 support, not broad
   cross-board closure
 

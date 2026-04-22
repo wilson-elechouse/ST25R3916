@@ -75,6 +75,8 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
   - First end-to-end I2C card detection example. Hardware-validated with one `ISO14443A` card.
 - `ESP32_I2C_scan_14443A_15693`
   - Extended I2C scan example after the basic path is stable. Validated with the current `ISO14443A` card; `ISO15693` still needs a hardware card result.
+- `ESP32_I2C_polling_hotplug`
+  - Continuous I2C polling with insert/remove reporting. Intended to replace repeated UID spam during long-running scan demos.
 
 ## Notes
 
