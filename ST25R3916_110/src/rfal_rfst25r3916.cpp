@@ -93,9 +93,11 @@ ReturnCode RfalRfST25R3916Class::rfalInitialize(void)
 
   st25r3916ClearInterrupts();
 
-  Callback<void()>::func = std::bind(&RfalRfST25R3916Class::st25r3916Isr, this);
-  irq_handler = static_cast<ST25R3916IrqHandler>(Callback<void()>::callback);
-  attachInterrupt(int_pin, irq_handler, RISING);
+  if (!i2c_enabled) {
+    Callback<void()>::func = std::bind(&RfalRfST25R3916Class::st25r3916Isr, this);
+    irq_handler = static_cast<ST25R3916IrqHandler>(Callback<void()>::callback);
+    attachInterrupt(int_pin, irq_handler, RISING);
+  }
 
   /* Disable any previous observation mode */
   rfalST25R3916ObsModeDisable();
@@ -214,8 +216,10 @@ ReturnCode RfalRfST25R3916Class::rfalDeinitialize(void)
 
   gRFAL.state = RFAL_STATE_IDLE;
 
-  detachInterrupt(int_pin);
-  irq_handler = NULL;
+  if (!i2c_enabled && (irq_handler != NULL)) {
+    detachInterrupt(int_pin);
+    irq_handler = NULL;
+  }
 
   return ERR_NONE;
 }
@@ -1056,6 +1060,8 @@ ReturnCode RfalRfST25R3916Class::rfalGetTransceiveRSSI(uint16_t *rssi)
 /*******************************************************************************/
 void RfalRfST25R3916Class::rfalWorker(void)
 {
+  st25r3916ProcessInterrupts();
+
   switch (gRFAL.state) {
     case RFAL_STATE_TXRX:
       rfalRunTransceiveWorker();

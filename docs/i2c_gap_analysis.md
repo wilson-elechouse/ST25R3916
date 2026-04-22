@@ -181,8 +181,14 @@ lacks the hardware closure needed to claim support:
 
 ## Current Conclusion
 
-The repository contains meaningful I2C preparation work, but it is still a
-half-finished transport path. The correct statement today is:
+The repository now has a working first-pass ESP32 I2C path for:
 
-`I2C groundwork exists, but I2C is not yet supported on ESP32 in a validated,
-user-facing form.`
+- chip probe
+- `ISO14443A` scanning
+- extended `A + V` scan operation with the current `ISO14443A` test card
+
+Remaining gaps are now narrower:
+
+- no recorded `ISO15693` hardware card result yet
+- no broader board matrix yet
+- no long-duration I2C hotplug/stress closure yet

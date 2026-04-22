@@ -79,6 +79,11 @@ void RfalRfST25R3916Class::st25r3916InitInterrupts(void)
 /*******************************************************************************/
 void RfalRfST25R3916Class::st25r3916Isr(void)
 {
+  if (i2c_enabled) {
+    setISRPending();
+    return;
+  }
+
   if (!isBusBusy()) {
     st25r3916CheckForReceivedInterrupts();
 
@@ -88,6 +93,31 @@ void RfalRfST25R3916Class::st25r3916Isr(void)
     }
   } else {
     setISRPending();
+  }
+}
+
+
+/*******************************************************************************/
+void RfalRfST25R3916Class::st25r3916ProcessInterrupts(void)
+{
+  const bool lineAsserted = (digitalRead(int_pin) == HIGH);
+
+  if (isBusBusy()) {
+    if (lineAsserted) {
+      setISRPending();
+    }
+    return;
+  }
+
+  if (!isr_pending && !(i2c_enabled && lineAsserted)) {
+    return;
+  }
+
+  st25r3916CheckForReceivedInterrupts();
+  isr_pending = false;
+
+  if (NULL != st25r3916interrupt.callback) {
+    st25r3916interrupt.callback();
   }
 }
 
@@ -152,7 +182,9 @@ uint32_t RfalRfST25R3916Class::st25r3916WaitForInterruptsTimed(uint32_t mask, ui
 
   /* Run until specific interrupt has happen or the timer has expired */
   do {
+    st25r3916ProcessInterrupts();
     status = (st25r3916interrupt.status & mask);
+    yield();
   } while ((!timerIsExpired(tmrDelay) || (tmo == 0U)) && (status == 0U));
 
   status = st25r3916interrupt.status & mask;
@@ -168,6 +200,7 @@ uint32_t RfalRfST25R3916Class::st25r3916GetInterrupt(uint32_t mask)
 {
   uint32_t irqs;
 
+  st25r3916ProcessInterrupts();
   irqs = (st25r3916interrupt.status & mask);
   if (irqs != ST25R3916_IRQ_MASK_NONE) {
     st25r3916interrupt.status &= ~irqs;

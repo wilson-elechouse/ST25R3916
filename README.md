@@ -1,7 +1,7 @@
 # ST25R3916 for ESP32
 
 This repository is an ESP32-focused fork of the ST25R3916 + NFC-RFAL Arduino libraries.
-The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C bring-up work is now present in this branch, but hardware validation is still incomplete.
+The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C basic bring-up is also validated in this branch for chip probe and `ISO14443A` scanning at `100 kHz`.
 
 ## Repository layout
 
@@ -20,7 +20,7 @@ The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C bring-up wo
 
 - This fork is maintained for ESP32 first.
 - SPI is the primary and regression-protected path.
-- I2C is developed as a separate bring-up track and remains validation-gated.
+- I2C is developed as a separate bring-up track and currently has first-pass ESP32 validation only.
 - Upstream changes are pulled selectively as small backports instead of broad version jumps.
 - Compatibility with stm32duino release cadence is not guaranteed.
 
@@ -70,16 +70,16 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
 ### Current I2C bring-up examples
 
 - `ESP32_I2C_probe_chip`
-  - Raw ACK + chip-ID + `rfalInitialize()` probe for the minimum hardware path.
+  - Raw ACK + chip-ID + `rfalInitialize()` probe for the minimum hardware path. Hardware-validated.
 - `ESP32_I2C_scan_14443A`
-  - First end-to-end I2C card detection example.
+  - First end-to-end I2C card detection example. Hardware-validated with one `ISO14443A` card.
 - `ESP32_I2C_scan_14443A_15693`
-  - Extended I2C scan example after the basic path is stable.
+  - Extended I2C scan example after the basic path is stable. Validated with the current `ISO14443A` card; `ISO15693` still needs a hardware card result.
 
 ## Notes
 
 - SPI examples use `SPIClass(VSPI)`.
 - I2C examples assume the caller wants the library sketches to own `Wire.begin(...)` with the default ESP32 pins shown above.
-- I2C examples are compile-tested in this repository, but not yet closed on validated hardware results.
+- I2C on ESP32 now avoids doing `Wire` transactions in the hardware ISR path; IRQs are drained in normal context.
 - Optional serial debug logging is controlled through `ST25R3916_ENABLE_DEBUG_LOG` in `ST25R3916_110/src/st25r3916_config.h`.
 - The original archive is kept in the repository for reference, but the extracted source folders are the maintained path.

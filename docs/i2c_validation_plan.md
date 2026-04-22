@@ -189,4 +189,4 @@ At the time this plan was written:
 - the code inspection gap analysis exists
 - the chip probe and I2C scan examples exist
 - compile closure exists for the current I2C examples
-- no ESP32 I2C hardware validation has been completed yet
+- first-pass ESP32 I2C hardware validation now exists for chip probe and `ISO14443A`

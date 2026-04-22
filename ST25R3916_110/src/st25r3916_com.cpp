@@ -131,9 +131,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadMultipleRegisters(uint8_t reg, uin
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -204,9 +203,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteMultipleRegisters(uint8_t reg, co
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -277,9 +275,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteFifo(const uint8_t *values, uint1
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -342,9 +339,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadFifo(uint8_t *buf, uint16_t length
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -394,9 +390,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMem(const uint8_t *values, uint
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -460,9 +455,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadPTMem(uint8_t *values, uint16_t le
   uint8_t tmp[ST25R3916_REG_LEN + ST25R3916_PTM_LEN];  /* local buffer to handle prepended byte on I2C and SPI */
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -520,9 +514,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMemF(const uint8_t *values, uin
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -585,9 +578,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMemTSN(const uint8_t *values, u
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -650,9 +642,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916ExecuteCommand(uint8_t cmd)
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -692,9 +683,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadTestRegister(uint8_t reg, uint8_t 
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
@@ -748,9 +738,8 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteTestRegister(uint8_t reg, uint8_t
 {
   auto finish = [&](ReturnCode err) -> ReturnCode {
     bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+    if (isr_pending || (i2c_enabled && (digitalRead(int_pin) == HIGH))) {
+      st25r3916ProcessInterrupts();
     }
     return err;
   };
