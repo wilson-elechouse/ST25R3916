@@ -28,6 +28,18 @@
 #define ST25R3916_DEFAULT_LED_PIN 2
 #endif
 
+#ifndef ST25R3916_DEFAULT_I2C_SDA_PIN
+#define ST25R3916_DEFAULT_I2C_SDA_PIN 21
+#endif
+
+#ifndef ST25R3916_DEFAULT_I2C_SCL_PIN
+#define ST25R3916_DEFAULT_I2C_SCL_PIN 22
+#endif
+
+#ifndef ST25R3916_DEFAULT_I2C_FREQUENCY
+#define ST25R3916_DEFAULT_I2C_FREQUENCY 100000UL
+#endif
+
 /* SPI-path: stay conservative on clock speed until board-specific validation says otherwise. */
 #ifndef ST25R3916_DEFAULT_SPI_FREQUENCY
 #define ST25R3916_DEFAULT_SPI_FREQUENCY 5000000UL

@@ -70,6 +70,49 @@
 ******************************************************************************
 */
 
+namespace {
+
+constexpr uint8_t kI2cErrWriteByte = 0x01U;
+constexpr uint8_t kI2cErrShortRead = 0x02U;
+
+ReturnCode mapI2cEndTransmissionStatus(uint8_t status)
+{
+  switch (status) {
+    case 0U:
+      return ERR_NONE;
+    case 5U:
+      return ERR_TIMEOUT;
+    default:
+      return ERR_INSERT_I2C_GRP(status);
+  }
+}
+
+ReturnCode i2cWriteByteChecked(TwoWire *wire, uint8_t value)
+{
+  return (wire->write(value) == 1U) ? ERR_NONE : ERR_INSERT_I2C_GRP(kI2cErrWriteByte);
+}
+
+ReturnCode i2cRequestBytesChecked(TwoWire *wire, uint8_t address, uint8_t *buf, uint16_t length)
+{
+  const size_t requested = (size_t)length;
+  const size_t received = wire->requestFrom(address, (uint8_t)length);
+
+  if (received != requested) {
+    return (received == 0U) ? ERR_TIMEOUT : ERR_INSERT_I2C_GRP(kI2cErrShortRead);
+  }
+
+  for (uint16_t i = 0U; i < length; i++) {
+    if (!wire->available()) {
+      return ERR_INSERT_I2C_GRP(kI2cErrShortRead);
+    }
+    buf[i] = (uint8_t)wire->read();
+  }
+
+  return ERR_NONE;
+}
+
+} // namespace
+
 
 /*
 ******************************************************************************
@@ -86,6 +129,19 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadRegister(uint8_t reg, uint8_t *val
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916ReadMultipleRegisters(uint8_t reg, uint8_t *values, uint8_t length)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
+  if ((values == NULL) && (length > 0U)) {
+    return ERR_PARAM;
+  }
+
   if (length > 0U) {
     bus_busy = true;
     if (!i2c_enabled) {
@@ -105,30 +161,33 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadMultipleRegisters(uint8_t reg, uin
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
+      ReturnCode err = ERR_NONE;
+
       dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
       /* If is a space-B register send a direct command first */
       if ((reg & ST25R3916_SPACE_B) != 0U) {
-        dev_i2c->write(ST25R3916_CMD_SPACE_B_ACCESS);
+        err = i2cWriteByteChecked(dev_i2c, ST25R3916_CMD_SPACE_B_ACCESS);
+        if (err != ERR_NONE) {
+          return finish(err);
+        }
       }
 
-      dev_i2c->write((reg & ~ST25R3916_SPACE_B) | ST25R3916_READ_MODE);
-      dev_i2c->endTransmission(false);
-      dev_i2c->requestFrom(((uint8_t)(ST25R3916_I2C_ADDR & 0x7F)), (uint8_t) length);
-
-      int i = 0;
-      while (dev_i2c->available()) {
-        values[i] = dev_i2c->read();
-        i++;
+      err = i2cWriteByteChecked(dev_i2c, (uint8_t)((reg & ~ST25R3916_SPACE_B) | ST25R3916_READ_MODE));
+      if (err != ERR_NONE) {
+        return finish(err);
       }
-    }
-    bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+      err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(false));
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
+      err = i2cRequestBytesChecked(dev_i2c, (uint8_t)(ST25R3916_I2C_ADDR & 0x7F), values, length);
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
     }
   }
 
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
@@ -143,6 +202,19 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteRegister(uint8_t reg, uint8_t val
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916WriteMultipleRegisters(uint8_t reg, const uint8_t *values, uint8_t length)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
+  if ((values == NULL) && (length > 0U)) {
+    return ERR_PARAM;
+  }
+
   if (length > 0U) {
     bus_busy = true;
     if (!i2c_enabled) {
@@ -167,34 +239,56 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteMultipleRegisters(uint8_t reg, co
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
+      ReturnCode err = ERR_NONE;
+
       dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
       /* If is a space-B register send a direct command first */
       if ((reg & ST25R3916_SPACE_B) != 0U) {
-        dev_i2c->write(ST25R3916_CMD_SPACE_B_ACCESS);
+        err = i2cWriteByteChecked(dev_i2c, ST25R3916_CMD_SPACE_B_ACCESS);
+        if (err != ERR_NONE) {
+          return finish(err);
+        }
       }
 
-      dev_i2c->write((reg & ~ST25R3916_SPACE_B) | ST25R3916_WRITE_MODE);
+      err = i2cWriteByteChecked(dev_i2c, (uint8_t)((reg & ~ST25R3916_SPACE_B) | ST25R3916_WRITE_MODE));
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
 
       for (uint16_t i = 0 ; i < length ; i++) {
-        dev_i2c->write(values[i]);
+        err = i2cWriteByteChecked(dev_i2c, values[i]);
+        if (err != ERR_NONE) {
+          return finish(err);
+        }
       }
-      dev_i2c->endTransmission(true);
-    }
-    bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+      err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(true));
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
     }
   }
 
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916WriteFifo(const uint8_t *values, uint16_t length)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
   if (length > ST25R3916_FIFO_DEPTH) {
+    return ERR_PARAM;
+  }
+
+  if ((values == NULL) && (length > 0U)) {
     return ERR_PARAM;
   }
 
@@ -217,29 +311,48 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteFifo(const uint8_t *values, uint1
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
+      ReturnCode err = ERR_NONE;
+
       dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
 
-      dev_i2c->write(ST25R3916_FIFO_LOAD);
+      err = i2cWriteByteChecked(dev_i2c, ST25R3916_FIFO_LOAD);
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
 
       for (uint16_t i = 0 ; i < length ; i++) {
-        dev_i2c->write(values[i]);
+        err = i2cWriteByteChecked(dev_i2c, values[i]);
+        if (err != ERR_NONE) {
+          return finish(err);
+        }
       }
-      dev_i2c->endTransmission(true);
-    }
-    bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+      err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(true));
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
     }
   }
 
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916ReadFifo(uint8_t *buf, uint16_t length)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
+  if ((buf == NULL) && (length > 0U)) {
+    return ERR_PARAM;
+  }
+
   if (length > 0U) {
     bus_busy = true;
     if (!i2c_enabled) {
@@ -254,32 +367,45 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadFifo(uint8_t *buf, uint16_t length
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
-      dev_i2c->write(ST25R3916_FIFO_READ);
-      dev_i2c->endTransmission(false);
-      dev_i2c->requestFrom(((uint8_t)(ST25R3916_I2C_ADDR & 0x7F)), (uint8_t) length);
+      ReturnCode err = ERR_NONE;
 
-      int i = 0;
-      while (dev_i2c->available()) {
-        buf[i] = dev_i2c->read();
-        i++;
+      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      err = i2cWriteByteChecked(dev_i2c, ST25R3916_FIFO_READ);
+      if (err != ERR_NONE) {
+        return finish(err);
       }
-    }
-    bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+      err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(false));
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
+      err = i2cRequestBytesChecked(dev_i2c, (uint8_t)(ST25R3916_I2C_ADDR & 0x7F), buf, length);
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
     }
   }
 
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916WritePTMem(const uint8_t *values, uint16_t length)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
   if (length > ST25R3916_PTM_LEN) {
+    return ERR_PARAM;
+  }
+
+  if ((values == NULL) && (length > 0U)) {
     return ERR_PARAM;
   }
 
@@ -302,23 +428,29 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMem(const uint8_t *values, uint
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
+      ReturnCode err = ERR_NONE;
+
       dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
 
-      dev_i2c->write(ST25R3916_PT_A_CONFIG_LOAD);
+      err = i2cWriteByteChecked(dev_i2c, ST25R3916_PT_A_CONFIG_LOAD);
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
 
       for (uint16_t i = 0 ; i < length ; i++) {
-        dev_i2c->write(values[i]);
+        err = i2cWriteByteChecked(dev_i2c, values[i]);
+        if (err != ERR_NONE) {
+          return finish(err);
+        }
       }
-      dev_i2c->endTransmission(true);
-    }
-    bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+      err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(true));
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
     }
   }
 
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
@@ -326,6 +458,19 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMem(const uint8_t *values, uint
 ReturnCode RfalRfST25R3916Class::st25r3916ReadPTMem(uint8_t *values, uint16_t length)
 {
   uint8_t tmp[ST25R3916_REG_LEN + ST25R3916_PTM_LEN];  /* local buffer to handle prepended byte on I2C and SPI */
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
+  if ((values == NULL) && (length > 0U)) {
+    return ERR_PARAM;
+  }
+
   if (length > 0U) {
     if (length > ST25R3916_PTM_LEN) {
       return ERR_PARAM;
@@ -345,36 +490,48 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadPTMem(uint8_t *values, uint16_t le
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
-      dev_i2c->write(ST25R3916_PT_MEM_READ);
-      dev_i2c->endTransmission(false);
-      dev_i2c->requestFrom(((uint8_t)(ST25R3916_I2C_ADDR & 0x7F)), (uint8_t)(ST25R3916_REG_LEN + length));
+      ReturnCode err = ERR_NONE;
 
-      int i = 0;
-      while (dev_i2c->available()) {
-        tmp[i] = dev_i2c->read();
-        i++;
+      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      err = i2cWriteByteChecked(dev_i2c, ST25R3916_PT_MEM_READ);
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
+      err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(false));
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
+      err = i2cRequestBytesChecked(dev_i2c, (uint8_t)(ST25R3916_I2C_ADDR & 0x7F), tmp, (uint16_t)(ST25R3916_REG_LEN + length));
+      if (err != ERR_NONE) {
+        return finish(err);
       }
     }
 
     /* Copy PTMem content without prepended byte */
     ST_MEMCPY(values, (tmp + ST25R3916_REG_LEN), length);
-
-    bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
-    }
   }
 
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916WritePTMemF(const uint8_t *values, uint16_t length)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
   if (length > (ST25R3916_PTM_F_LEN + ST25R3916_PTM_TSN_LEN)) {
+    return ERR_PARAM;
+  }
+
+  if ((values == NULL) && (length > 0U)) {
     return ERR_PARAM;
   }
 
@@ -397,30 +554,49 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMemF(const uint8_t *values, uin
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
+      ReturnCode err = ERR_NONE;
+
       dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
 
-      dev_i2c->write(ST25R3916_PT_F_CONFIG_LOAD);
+      err = i2cWriteByteChecked(dev_i2c, ST25R3916_PT_F_CONFIG_LOAD);
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
 
       for (uint16_t i = 0 ; i < length ; i++) {
-        dev_i2c->write(values[i]);
+        err = i2cWriteByteChecked(dev_i2c, values[i]);
+        if (err != ERR_NONE) {
+          return finish(err);
+        }
       }
-      dev_i2c->endTransmission(true);
-    }
-    bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+      err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(true));
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
     }
   }
 
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916WritePTMemTSN(const uint8_t *values, uint16_t length)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
   if (length > ST25R3916_PTM_TSN_LEN) {
+    return ERR_PARAM;
+  }
+
+  if ((values == NULL) && (length > 0U)) {
     return ERR_PARAM;
   }
 
@@ -443,29 +619,44 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMemTSN(const uint8_t *values, u
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
+      ReturnCode err = ERR_NONE;
+
       dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
 
-      dev_i2c->write(ST25R3916_PT_TSN_DATA_LOAD);
+      err = i2cWriteByteChecked(dev_i2c, ST25R3916_PT_TSN_DATA_LOAD);
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
 
       for (uint16_t i = 0 ; i < length ; i++) {
-        dev_i2c->write(values[i]);
+        err = i2cWriteByteChecked(dev_i2c, values[i]);
+        if (err != ERR_NONE) {
+          return finish(err);
+        }
       }
-      dev_i2c->endTransmission(true);
-    }
-    bus_busy = false;
-    if (isr_pending) {
-      st25r3916Isr();
-      isr_pending = false;
+      err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(true));
+      if (err != ERR_NONE) {
+        return finish(err);
+      }
     }
   }
 
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916ExecuteCommand(uint8_t cmd)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
   bus_busy = true;
   if (!i2c_enabled) {
     /* Setting Transaction Parameters */
@@ -477,26 +668,41 @@ ReturnCode RfalRfST25R3916Class::st25r3916ExecuteCommand(uint8_t cmd)
     digitalWrite(cs_pin, HIGH);
     dev_spi->endTransaction();
   } else {
+    ReturnCode err = ERR_NONE;
+
     dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
 
-    dev_i2c->write((cmd | ST25R3916_CMD_MODE));
+    err = i2cWriteByteChecked(dev_i2c, (uint8_t)(cmd | ST25R3916_CMD_MODE));
+    if (err != ERR_NONE) {
+      return finish(err);
+    }
 
-    dev_i2c->endTransmission(true);
+    err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(true));
+    if (err != ERR_NONE) {
+      return finish(err);
+    }
   }
 
-  bus_busy = false;
-  if (isr_pending) {
-    st25r3916Isr();
-    isr_pending = false;
-  }
-
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916ReadTestRegister(uint8_t reg, uint8_t *val)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
+  if (val == NULL) {
+    return ERR_PARAM;
+  }
+
   bus_busy = true;
   if (!i2c_enabled) {
     /* Setting Transaction Parameters */
@@ -511,31 +717,44 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadTestRegister(uint8_t reg, uint8_t 
     digitalWrite(cs_pin, HIGH);
     dev_spi->endTransaction();
   } else {
+    ReturnCode err = ERR_NONE;
+
     dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
 
-    dev_i2c->write(ST25R3916_CMD_TEST_ACCESS);
-    dev_i2c->write((reg | ST25R3916_READ_MODE));
-    dev_i2c->endTransmission(false);
-    dev_i2c->requestFrom(((uint8_t)(ST25R3916_I2C_ADDR & 0x7F)), ST25R3916_REG_LEN);
-
-    if (dev_i2c->available()) {
-      *val = dev_i2c->read();
+    err = i2cWriteByteChecked(dev_i2c, ST25R3916_CMD_TEST_ACCESS);
+    if (err != ERR_NONE) {
+      return finish(err);
+    }
+    err = i2cWriteByteChecked(dev_i2c, (uint8_t)(reg | ST25R3916_READ_MODE));
+    if (err != ERR_NONE) {
+      return finish(err);
+    }
+    err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(false));
+    if (err != ERR_NONE) {
+      return finish(err);
+    }
+    err = i2cRequestBytesChecked(dev_i2c, (uint8_t)(ST25R3916_I2C_ADDR & 0x7F), val, ST25R3916_REG_LEN);
+    if (err != ERR_NONE) {
+      return finish(err);
     }
   }
 
-  bus_busy = false;
-  if (isr_pending) {
-    st25r3916Isr();
-    isr_pending = false;
-  }
-
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916WriteTestRegister(uint8_t reg, uint8_t val)
 {
+  auto finish = [&](ReturnCode err) -> ReturnCode {
+    bus_busy = false;
+    if (isr_pending) {
+      st25r3916Isr();
+      isr_pending = false;
+    }
+    return err;
+  };
+
   bus_busy = true;
 
   if (!i2c_enabled) {
@@ -553,24 +772,32 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteTestRegister(uint8_t reg, uint8_t
     digitalWrite(cs_pin, HIGH);
     dev_spi->endTransaction();
   } else {
+    ReturnCode err = ERR_NONE;
+
     dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
 
-    dev_i2c->write(ST25R3916_CMD_TEST_ACCESS);
+    err = i2cWriteByteChecked(dev_i2c, ST25R3916_CMD_TEST_ACCESS);
+    if (err != ERR_NONE) {
+      return finish(err);
+    }
 
-    dev_i2c->write((reg | ST25R3916_WRITE_MODE));
+    err = i2cWriteByteChecked(dev_i2c, (uint8_t)(reg | ST25R3916_WRITE_MODE));
+    if (err != ERR_NONE) {
+      return finish(err);
+    }
 
-    dev_i2c->write(val);
+    err = i2cWriteByteChecked(dev_i2c, val);
+    if (err != ERR_NONE) {
+      return finish(err);
+    }
 
-    dev_i2c->endTransmission(true);
+    err = mapI2cEndTransmissionStatus((uint8_t)dev_i2c->endTransmission(true));
+    if (err != ERR_NONE) {
+      return finish(err);
+    }
   }
 
-  bus_busy = false;
-  if (isr_pending) {
-    st25r3916Isr();
-    isr_pending = false;
-  }
-
-  return ERR_NONE;
+  return finish(ERR_NONE);
 }
 
 

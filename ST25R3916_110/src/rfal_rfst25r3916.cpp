@@ -73,19 +73,29 @@ ReturnCode RfalRfST25R3916Class::rfalInitialize(void)
 {
   ReturnCode err;
 
-  pinMode(cs_pin, OUTPUT);
-  digitalWrite(cs_pin, HIGH);
+  if (!i2c_enabled) {
+    if ((dev_spi == NULL) || (cs_pin < 0) || (int_pin < 0)) {
+      return ERR_PARAM;
+    }
+    pinMode(cs_pin, OUTPUT);
+    digitalWrite(cs_pin, HIGH);
+  } else {
+    if ((dev_i2c == NULL) || (int_pin < 0)) {
+      return ERR_PARAM;
+    }
+  }
 
   pinMode(int_pin, INPUT);
-  Callback<void()>::func = std::bind(&RfalRfST25R3916Class::st25r3916Isr, this);
-  irq_handler = static_cast<ST25R3916IrqHandler>(Callback<void()>::callback);
-  attachInterrupt(int_pin, irq_handler, RISING);
 
   rfalAnalogConfigInitialize();              /* Initialize RFAL's Analog Configs */
 
   EXIT_ON_ERR(err, st25r3916Initialize());
 
   st25r3916ClearInterrupts();
+
+  Callback<void()>::func = std::bind(&RfalRfST25R3916Class::st25r3916Isr, this);
+  irq_handler = static_cast<ST25R3916IrqHandler>(Callback<void()>::callback);
+  attachInterrupt(int_pin, irq_handler, RISING);
 
   /* Disable any previous observation mode */
   rfalST25R3916ObsModeDisable();
