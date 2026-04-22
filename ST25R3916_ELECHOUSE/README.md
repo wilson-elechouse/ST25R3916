@@ -3,6 +3,11 @@
 This library package contains the ESP32-oriented ST25R3916/ST25R3916B driver used by this repository.
 It depends on the sibling `NFC-RFAL` library folder from the same repository.
 
+Related ELECHOUSE product:
+
+- `https://www.elechouse.com/product/st25r3916_nfc_reader/`
+- Treat the stock product path as `SPI` first; the `I2C` examples in this repository are additional validated code paths for alternate hardware setups.
+
 ## Scope
 
 - Supported focus: `ESP32 Dev Module`

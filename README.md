@@ -5,6 +5,13 @@ The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C basic bring
 
 `ST25R3916_ELECHOUSE` examples still depend on the sibling `NFC-RFAL` library.
 
+## Related Product
+
+- ELECHOUSE product page: `https://www.elechouse.com/product/st25r3916_nfc_reader/`
+- The stock ELECHOUSE ST25R3916 product page is the main hardware reference for this repository.
+- For the stock product, use the `SPI` examples first.
+- The `I2C` examples in this repository are kept as an additional validated code path for custom or alternate hardware setups; they should not be confused with the stock product quick-start path.
+
 ## Repository layout
 
 - `ST25R3916_ELECHOUSE/`
@@ -16,7 +23,7 @@ The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C basic bring
 - `ST25R3916_ELECHOUSE/examples/I2C/`
   - Curated ESP32 I2C examples.
 - `docs/`
-  - ESP32 SPI baseline and upstream sync policy for this fork.
+  - ESP32 SPI/I2C validation notes and maintenance records kept in GitHub for repository users and maintainers.
 
 ## Maintenance policy
 
@@ -90,4 +97,5 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
 - I2C examples assume the caller wants the library sketches to own `Wire.begin(...)` with the default ESP32 pins shown above.
 - I2C on ESP32 now avoids doing `Wire` transactions in the hardware ISR path; IRQs are drained in normal context.
 - Optional serial debug logging is controlled through `ST25R3916_ENABLE_DEBUG_LOG` in `ST25R3916_ELECHOUSE/src/st25r3916_config.h`.
+- The `docs/` folder should stay in GitHub because it records the validated SPI/I2C baseline, limits, and maintenance decisions for this fork.
 - Local scratch files, migration plans, and deprecated examples are kept under `.local_only/` and are not uploaded to GitHub.
