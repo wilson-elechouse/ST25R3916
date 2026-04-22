@@ -77,6 +77,8 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
   - Extended I2C scan example after the basic path is stable. Validated with the current `ISO14443A` card; `ISO15693` still needs a hardware card result.
 - `ESP32_I2C_polling_hotplug`
   - Continuous I2C polling with insert/remove reporting. Intended to replace repeated UID spam during long-running scan demos.
+- `ESP32_I2C_mf1_s70_read_write_test`
+  - Safe MIFARE Classic S70 block write/read/restore test over I2C with default Key A.
 
 ## Notes
 
