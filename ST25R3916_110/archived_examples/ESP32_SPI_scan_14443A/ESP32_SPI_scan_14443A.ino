@@ -1,3 +1,12 @@
+/*
+  Example: ESP32_SPI_scan_14443A
+  Bus: SPI
+  Wiring: SCK=18, MISO=19, MOSI=23, SS=5, IRQ=4, LED=2 (optional)
+  Cards: ISO14443A
+  Goal: Minimal ESP32 bring-up that prints the UID of one ISO14443A tag.
+  Common failures: Wrong IRQ/SS wiring, missing NFC-RFAL library folder, ESP32 core not installed.
+*/
+
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -13,8 +22,8 @@ constexpr int kPinMiso = ST25R3916_DEFAULT_SPI_MISO_PIN;
 constexpr int kPinSck = ST25R3916_DEFAULT_SPI_SCK_PIN;
 constexpr int kPinSs = ST25R3916_DEFAULT_SPI_SS_PIN;
 constexpr int kPinIrq = ST25R3916_DEFAULT_IRQ_PIN;
-constexpr int kPinLed = ST25R3916_DEFAULT_LED_PIN;
 
+// ESP32-specific: use the VSPI peripheral for the default 18/19/23 wiring.
 SPIClass gSpi(VSPI);
 RfalRfST25R3916Class gReader(&gSpi, kPinSs, kPinIrq);
 RfalNfcClass gNfc(&gReader);
@@ -27,21 +36,9 @@ void waitForSerial()
   }
 }
 
-const char *deviceTypeToString(rfalNfcDevType type)
+bool isNfcaType(rfalNfcDevType type)
 {
-  switch (type) {
-    case RFAL_NFC_LISTEN_TYPE_NFCA:
-    case RFAL_NFC_POLL_TYPE_NFCA:
-      return "ISO14443A";
-    case RFAL_NFC_LISTEN_TYPE_NFCB:
-    case RFAL_NFC_POLL_TYPE_NFCB:
-      return "ISO14443B";
-    case RFAL_NFC_LISTEN_TYPE_NFCV:
-    case RFAL_NFC_POLL_TYPE_NFCV:
-      return "ISO15693";
-    default:
-      return "UNKNOWN";
-  }
+  return (type == RFAL_NFC_LISTEN_TYPE_NFCA) || (type == RFAL_NFC_POLL_TYPE_NFCA);
 }
 
 void printId(const uint8_t *id, uint8_t idLen)
@@ -60,11 +57,6 @@ void printId(const uint8_t *id, uint8_t idLen)
 
 void onNfcStateChange(rfalNfcState state)
 {
-  if (state == RFAL_NFC_STATE_START_DISCOVERY) {
-    digitalWrite(kPinLed, LOW);
-    return;
-  }
-
   if (state != RFAL_NFC_STATE_ACTIVATED) {
     return;
   }
@@ -75,9 +67,14 @@ void onNfcStateChange(rfalNfcState state)
     return;
   }
 
-  digitalWrite(kPinLed, HIGH);
-  Serial.print(deviceTypeToString(device->type));
-  Serial.print(" ID: ");
+  if (!isNfcaType(device->type)) {
+    Serial.print("Unexpected tag type: ");
+    Serial.println((int)device->type);
+    gNfc.rfalNfcDeactivate(true);
+    return;
+  }
+
+  Serial.print("ISO14443A UID: ");
   printId(device->nfcid, device->nfcidLen);
 
   const ReturnCode err = gNfc.rfalNfcDeactivate(true);
@@ -94,14 +91,21 @@ void setup()
   Serial.begin(115200);
   waitForSerial();
 
-  pinMode(kPinLed, OUTPUT);
-  digitalWrite(kPinLed, LOW);
   pinMode(kPinSs, OUTPUT);
   digitalWrite(kPinSs, HIGH);
   gSpi.begin(kPinSck, kPinMiso, kPinMosi, kPinSs);
 
-  Serial.println("ESP32 ST25R3916 multi-protocol reader");
-  Serial.println("Protocols: ISO14443A, ISO14443B, ISO15693");
+  Serial.println("ESP32 SPI ISO14443A scanner");
+  Serial.print("Pins: SCK=");
+  Serial.print(kPinSck);
+  Serial.print(" MISO=");
+  Serial.print(kPinMiso);
+  Serial.print(" MOSI=");
+  Serial.print(kPinMosi);
+  Serial.print(" SS=");
+  Serial.print(kPinSs);
+  Serial.print(" IRQ=");
+  Serial.println(kPinIrq);
 
   ReturnCode err = gNfc.rfalNfcInitialize();
   if (err != ERR_NONE) {
@@ -116,7 +120,7 @@ void setup()
   memset(&discover, 0, sizeof(discover));
   discover.compMode = RFAL_COMPLIANCE_MODE_NFC;
   discover.devLimit = RFAL_ESP32_DEFAULT_DEVICE_LIMIT;
-  discover.techs2Find = RFAL_NFC_POLL_TECH_A | RFAL_NFC_POLL_TECH_B | RFAL_NFC_POLL_TECH_V;
+  discover.techs2Find = RFAL_NFC_POLL_TECH_A;
   discover.totalDuration = RFAL_ESP32_DEFAULT_DISCOVERY_DURATION_MS;
   discover.notifyCb = onNfcStateChange;
 

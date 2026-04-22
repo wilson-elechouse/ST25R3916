@@ -38,7 +38,8 @@
 #include "rfal_rfst25r3916.h"
 
 /*******************************************************************************/
-RfalRfST25R3916Class::RfalRfST25R3916Class(SPIClass *spi, int cs_pin, int int_pin, uint32_t spi_speed) : dev_spi(spi), cs_pin(cs_pin), int_pin(int_pin), spi_speed(spi_speed)
+RfalRfST25R3916Class::RfalRfST25R3916Class(SPIClass *spi, int cs_pin, int int_pin, uint32_t spi_speed)
+  : dev_i2c(NULL), dev_spi(spi), cs_pin(cs_pin), int_pin(int_pin), spi_speed(spi_speed)
 {
   memset(&gRFAL, 0, sizeof(rfal));
   memset(&gRfalAnalogConfigMgmt, 0, sizeof(rfalAnalogConfigMgmt));
@@ -47,13 +48,13 @@ RfalRfST25R3916Class::RfalRfST25R3916Class(SPIClass *spi, int cs_pin, int int_pi
   memset((void *)&st25r3916interrupt, 0, sizeof(st25r3916Interrupt));
   timerStopwatchTick = 0;
   i2c_enabled = false;
-  dev_i2c = NULL;
   isr_pending = false;
   bus_busy = false;
   irq_handler = NULL;
 }
 
-RfalRfST25R3916Class::RfalRfST25R3916Class(TwoWire *i2c, int int_pin) : dev_i2c(i2c), int_pin(int_pin)
+RfalRfST25R3916Class::RfalRfST25R3916Class(TwoWire *i2c, int int_pin)
+  : dev_i2c(i2c), dev_spi(NULL), cs_pin(-1), int_pin(int_pin), spi_speed(ST25R3916_DEFAULT_SPI_FREQUENCY)
 {
   memset(&gRFAL, 0, sizeof(rfal));
   memset(&gRfalAnalogConfigMgmt, 0, sizeof(rfalAnalogConfigMgmt));
@@ -62,7 +63,6 @@ RfalRfST25R3916Class::RfalRfST25R3916Class(TwoWire *i2c, int int_pin) : dev_i2c(
   memset((void *)&st25r3916interrupt, 0, sizeof(st25r3916Interrupt));
   timerStopwatchTick = 0;
   i2c_enabled = true;
-  dev_spi = NULL;
   isr_pending = false;
   bus_busy = false;
   irq_handler = NULL;
@@ -2869,7 +2869,6 @@ bool RfalRfST25R3916Class::isBusBusy(void)
 {
   return bus_busy;
 }
-
 
 /*******************************************************************************/
 extern uint8_t invalid_size_of_stream_configs[(sizeof(struct st25r3916StreamConfig) == sizeof(struct iso15693StreamConfig)) ? 1 : (-1)];

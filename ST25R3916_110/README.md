@@ -1,22 +1,32 @@
-# ST25R3916
+# ELECHOUSE ST25R3916 for ESP32
 
-The code implements the RF/NFC abstraction layer (RFAL) APIs for the ST25R3916 and ST25R3916B components.
+This library package contains the ESP32-oriented ST25R3916/ST25R3916B driver used by this repository.
+It depends on the sibling `NFC-RFAL` library folder from the same repository.
 
-# Dependencies
+## Scope
 
-The ST25R3916 library requires the following STM32duino library:
+- Supported focus: `ESP32 Dev Module`
+- Primary transport: `SPI`
+- Deferred transport: `I2C`
 
-* STM32duino NFC-RFAL: https://github.com/stm32duino/NFC-RFAL
+## Default example wiring
 
-## Documentation
+- `SCK` -> `GPIO18`
+- `MISO` -> `GPIO19`
+- `MOSI` -> `GPIO23`
+- `SS` -> `GPIO5`
+- `IRQ` -> `GPIO4`
+- `LED` -> `GPIO2` (optional)
 
-You can find the source files at  
-https://github.com/stm32duino/ST25R3916
+## Included examples
 
-The ST25R3916 datasheet is available at  
-https://www.st.com/en/nfc/st25r3916.html
+- `ESP32_SPI_scan_14443A`
+- `ESP32_SPI_scan_14443AB_15693`
+- `ESP32_SPI_polling_hotplug`
+- `ESP32_SPI_chip_info_debug`
 
-The ST25R3916B datasheet is available at  
-https://www.st.com/en/nfc/st25r3916b.html
+## Notes
 
-
+- `SPIClass(0)` is used instead of `VSPI` to stay compatible with Arduino-ESP32 core 3.x.
+- SPI tuning and debug macros live in `src/st25r3916_config.h`.
+- Upstream updates are applied selectively; this library is not a mirror of the stm32duino branch.

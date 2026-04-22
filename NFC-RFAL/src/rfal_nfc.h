@@ -67,6 +67,7 @@
 ******************************************************************************
 */
 #include "st_errno.h"
+#include "rfal_config.h"
 #include "rfal_rf.h"
 #include "rfal_isoDep.h"
 #include "rfal_nfca.h"

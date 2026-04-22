@@ -58,9 +58,6 @@
 #define ST25R3916_PT_TSN_DATA_LOAD      (0xACU)                        /*!< ST25R3916 Operation Mode: Passive Target Memory TSN Load       */
 #define ST25R3916_PT_MEM_READ           (0xBFU)                        /*!< ST25R3916 Operation Mode: Passive Target Memory Read           */
 
-#define ST25R3916_CMD_LEN               (1U)                           /*!< ST25R3916 CMD length                                           */
-#define ST25R3916_BUF_LEN               (ST25R3916_CMD_LEN+ST25R3916_FIFO_DEPTH) /*!< ST25R3916 communication buffer: CMD + FIFO length    */
-
 /*
 ******************************************************************************
 * LOCAL VARIABLES
@@ -329,7 +326,6 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMem(const uint8_t *values, uint
 ReturnCode RfalRfST25R3916Class::st25r3916ReadPTMem(uint8_t *values, uint16_t length)
 {
   uint8_t tmp[ST25R3916_REG_LEN + ST25R3916_PTM_LEN];  /* local buffer to handle prepended byte on I2C and SPI */
-
   if (length > 0U) {
     if (length > ST25R3916_PTM_LEN) {
       return ERR_PARAM;

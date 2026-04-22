@@ -1,3 +1,12 @@
+/*
+  Example: ESP32_SPI_polling_hotplug
+  Bus: SPI
+  Wiring: SCK=18, MISO=19, MOSI=23, SS=5, IRQ=4, LED=2 (optional)
+  Cards: ISO14443A, ISO14443B, ISO15693
+  Goal: Show insert/remove behaviour during continuous polling on ESP32.
+  Common failures: IRQ line not connected, weak USB power, polling timeout set too aggressively.
+*/
+
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -15,9 +24,15 @@ constexpr int kPinSs = ST25R3916_DEFAULT_SPI_SS_PIN;
 constexpr int kPinIrq = ST25R3916_DEFAULT_IRQ_PIN;
 constexpr int kPinLed = ST25R3916_DEFAULT_LED_PIN;
 
+constexpr unsigned long kCardAbsentAfterMs = 800UL;
+
 SPIClass gSpi(VSPI);
 RfalRfST25R3916Class gReader(&gSpi, kPinSs, kPinIrq);
 RfalNfcClass gNfc(&gReader);
+
+bool gCardPresent = false;
+unsigned long gLastSeenAt = 0;
+char gLastCardId[32] = {0};
 
 void waitForSerial()
 {
@@ -44,47 +59,51 @@ const char *deviceTypeToString(rfalNfcDevType type)
   }
 }
 
-void printId(const uint8_t *id, uint8_t idLen)
+void formatId(const uint8_t *id, uint8_t idLen, char *out, size_t outLen)
 {
+  size_t written = 0;
+  out[0] = '\0';
   for (uint8_t i = 0; i < idLen; i++) {
-    if (id[i] < 0x10U) {
-      Serial.print('0');
+    written += (size_t)snprintf(out + written, (written < outLen) ? (outLen - written) : 0U, "%02X", id[i]);
+    if ((i + 1U < idLen) && (written + 1U < outLen)) {
+      out[written++] = ' ';
+      out[written] = '\0';
     }
-    Serial.print(id[i], HEX);
-    if (i + 1U < idLen) {
-      Serial.print(' ');
+    if (written >= outLen) {
+      out[outLen - 1U] = '\0';
+      return;
     }
   }
-  Serial.println();
 }
 
 void onNfcStateChange(rfalNfcState state)
 {
-  if (state == RFAL_NFC_STATE_START_DISCOVERY) {
-    digitalWrite(kPinLed, LOW);
-    return;
-  }
-
   if (state != RFAL_NFC_STATE_ACTIVATED) {
     return;
   }
 
   rfalNfcDevice *device = NULL;
   if (gNfc.rfalNfcGetActiveDevice(&device) != ERR_NONE || (device == NULL)) {
-    Serial.println("Failed to fetch activated device information");
     return;
   }
 
-  digitalWrite(kPinLed, HIGH);
-  Serial.print(deviceTypeToString(device->type));
-  Serial.print(" ID: ");
-  printId(device->nfcid, device->nfcidLen);
+  char currentId[sizeof(gLastCardId)];
+  formatId(device->nfcid, device->nfcidLen, currentId, sizeof(currentId));
 
-  const ReturnCode err = gNfc.rfalNfcDeactivate(true);
-  if (err != ERR_NONE) {
-    Serial.print("Deactivate failed: ");
-    Serial.println((int)err);
+  if (!gCardPresent || (strncmp(gLastCardId, currentId, sizeof(gLastCardId)) != 0)) {
+    Serial.print("Card inserted: ");
+    Serial.print(deviceTypeToString(device->type));
+    Serial.print(" ");
+    Serial.println(currentId);
   }
+
+  strncpy(gLastCardId, currentId, sizeof(gLastCardId) - 1U);
+  gLastCardId[sizeof(gLastCardId) - 1U] = '\0';
+  gCardPresent = true;
+  gLastSeenAt = millis();
+  digitalWrite(kPinLed, HIGH);
+
+  gNfc.rfalNfcDeactivate(true);
 }
 
 } // namespace
@@ -100,8 +119,7 @@ void setup()
   digitalWrite(kPinSs, HIGH);
   gSpi.begin(kPinSck, kPinMiso, kPinMosi, kPinSs);
 
-  Serial.println("ESP32 ST25R3916 multi-protocol reader");
-  Serial.println("Protocols: ISO14443A, ISO14443B, ISO15693");
+  Serial.println("ESP32 SPI hotplug polling demo");
 
   ReturnCode err = gNfc.rfalNfcInitialize();
   if (err != ERR_NONE) {
@@ -133,4 +151,11 @@ void setup()
 void loop()
 {
   gNfc.rfalNfcWorker();
+
+  if (gCardPresent && ((millis() - gLastSeenAt) > kCardAbsentAfterMs)) {
+    gCardPresent = false;
+    gLastCardId[0] = '\0';
+    digitalWrite(kPinLed, LOW);
+    Serial.println("Card removed");
+  }
 }

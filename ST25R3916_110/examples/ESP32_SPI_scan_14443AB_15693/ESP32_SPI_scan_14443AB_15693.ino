@@ -1,3 +1,12 @@
+/*
+  Example: ESP32_SPI_scan_14443AB_15693
+  Bus: SPI
+  Wiring: SCK=18, MISO=19, MOSI=23, SS=5, IRQ=4, LED=2 (optional)
+  Cards: ISO14443A, ISO14443B, ISO15693
+  Goal: Multi-protocol discovery loop for the current ESP32 SPI baseline.
+  Common failures: Using SPIClass(VSPI) on ESP32 core 3.x, wrong board FQBN, poor antenna coupling.
+*/
+
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -100,8 +109,7 @@ void setup()
   digitalWrite(kPinSs, HIGH);
   gSpi.begin(kPinSck, kPinMiso, kPinMosi, kPinSs);
 
-  Serial.println("ESP32 ST25R3916 multi-protocol reader");
-  Serial.println("Protocols: ISO14443A, ISO14443B, ISO15693");
+  Serial.println("ESP32 SPI multi-protocol scanner");
 
   ReturnCode err = gNfc.rfalNfcInitialize();
   if (err != ERR_NONE) {

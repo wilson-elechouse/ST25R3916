@@ -39,6 +39,8 @@
 
 #include "SPI.h"
 #include "Wire.h"
+#include "st25r3916_config.h"
+#include "rfal_config.h"
 #include "rfal_rf.h"
 #include "st_errno.h"
 #include "nfc_utils.h"
@@ -385,7 +387,7 @@ class RfalRfST25R3916Class : public RfalRfClass {
     ******************************************************************************
     */
 
-    RfalRfST25R3916Class(SPIClass *spi, int cs_pin, int int_pin, uint32_t spi_speed = 5000000);
+    RfalRfST25R3916Class(SPIClass *spi, int cs_pin, int int_pin, uint32_t spi_speed = ST25R3916_DEFAULT_SPI_FREQUENCY);
     RfalRfST25R3916Class(TwoWire *i2c, int int_pin);
     ReturnCode rfalInitialize(void);
     ReturnCode rfalCalibrate(void);
