@@ -1,1 +1,6 @@
 /build/
+/temp/
+/tmp_boot_probe/
+/.local_only/
+/ST25R3916_ESP32_modification_plan_v2.md
+/ESP32_ST25R3916_sample code.zip

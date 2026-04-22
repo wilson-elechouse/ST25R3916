@@ -3,6 +3,8 @@
 This repository is an ESP32-focused fork of the ST25R3916 + NFC-RFAL Arduino libraries.
 The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C basic bring-up is also validated in this branch for chip probe and `ISO14443A` scanning at `100 kHz`.
 
+`ST25R3916_ELECHOUSE` examples still depend on the sibling `NFC-RFAL` library.
+
 ## Repository layout
 
 - `ST25R3916_ELECHOUSE/`
@@ -88,4 +90,4 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
 - I2C examples assume the caller wants the library sketches to own `Wire.begin(...)` with the default ESP32 pins shown above.
 - I2C on ESP32 now avoids doing `Wire` transactions in the hardware ISR path; IRQs are drained in normal context.
 - Optional serial debug logging is controlled through `ST25R3916_ENABLE_DEBUG_LOG` in `ST25R3916_ELECHOUSE/src/st25r3916_config.h`.
-- The original archive is kept in the repository for reference, but the extracted source folders are the maintained path.
+- Local scratch files, migration plans, and deprecated examples are kept under `.local_only/` and are not uploaded to GitHub.

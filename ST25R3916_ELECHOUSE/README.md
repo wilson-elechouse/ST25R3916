@@ -46,3 +46,4 @@ I2C examples under `examples/I2C/`:
 - `ESP32_I2C_probe_chip` and `ESP32_I2C_scan_14443A` are hardware-validated on `ESP32 Dev Module`; the `15693` branch still needs a real `ISO15693` card result.
 - SPI tuning and debug macros live in `src/st25r3916_config.h`.
 - Upstream updates are applied selectively; this library is not a mirror of the stm32duino branch.
+- Deprecated or local-only example material is intentionally kept out of this tracked library folder.
