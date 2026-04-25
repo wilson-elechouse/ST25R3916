@@ -1,7 +1,7 @@
 # ST25R3916 for ESP32
 
 This repository is an ESP32-focused fork of the ST25R3916 + NFC-RFAL Arduino libraries.
-The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C basic bring-up is also validated in this branch for chip probe and `ISO14443A` scanning at `100 kHz`.
+The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C bring-up is also validated in this branch for chip probe, `ISO14443A` scanning, and dedicated `ISO15693` block read/write/restore on `NXP ICODE SLIX2` at `100 kHz`.
 
 `ST25R3916_ELECHOUSE` examples still depend on the sibling `NFC-RFAL` library.
 
@@ -89,6 +89,8 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
   - Continuous I2C polling with insert/remove reporting. Intended to replace repeated UID spam during long-running scan demos.
 - `ESP32_I2C_mf1_s70_read_write_test`
   - Safe MIFARE Classic S70 block write/read/restore test over I2C with default Key A.
+- `ESP32_I2C_icode_slix2_read_write_test`
+  - Safe ISO15693 single-block write/read/restore test over I2C, hardware-validated on `NXP ICODE SLIX2`.
   Path: `ST25R3916_ELECHOUSE/examples/I2C/`
 
 ## Notes

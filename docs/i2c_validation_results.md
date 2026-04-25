@@ -3,7 +3,8 @@
 ## Current State
 
 I2C work in this repository has now reached first-pass hardware validation for
-ESP32 + ST25R3916 basic bring-up and `ISO14443A` scanning.
+ESP32 + ST25R3916 basic bring-up, `ISO14443A` scanning, and dedicated
+`ISO15693` single-block read/write/restore on `NXP ICODE SLIX2`.
 
 ## Implemented I2C Artifacts
 
@@ -12,6 +13,7 @@ ESP32 + ST25R3916 basic bring-up and `ISO14443A` scanning.
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_polling_hotplug/ESP32_I2C_polling_hotplug.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_mf1_s70_read_write_test/ESP32_I2C_mf1_s70_read_write_test.ino`
+- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_icode_slix2_read_write_test/ESP32_I2C_icode_slix2_read_write_test.ino`
 - low-level I2C transaction result checks in `st25r3916_com.cpp`
 - I2C-safe init branching in `rfal_rfst25r3916.cpp`
 
@@ -29,8 +31,8 @@ The current I2C examples compile for:
 - `SCL = GPIO22`
 - `IRQ = GPIO4` (`D4`)
 - I2C clock: `100 kHz`
-- validated card: `MIFARE One S70`
-- validated UID: `D9 A9 CE 70`
+- validated `ISO14443A` card: `MIFARE One S70`, UID `D9 A9 CE 70`
+- validated `ISO15693` card: `NXP ICODE SLIX2`, UID `FA F3 E3 06 09 01 04 E0`
 
 ## Hardware Validation Results
 
@@ -76,16 +78,32 @@ The current I2C examples compile for:
 - restore verification: passed
 - result: MF1 helper path is working over I2C for the validated S70 card
 
+### `ESP32_I2C_icode_slix2_read_write_test`
+
+- target card: `NXP ICODE SLIX2 / ISO15693`
+- system info read: passed
+- manufacturer: `NXP`
+- IC reference: `0x01`
+- memory geometry: `80` blocks, `4` bytes per block
+- selected safe test block: `8`
+- original block `8`: `00 00 00 00`
+- test pattern: `5A 6B 7C 8D`
+- write/read/restore cycle on block `8`: passed
+- restore verification: passed
+- result: NFC-V single-block write/read/restore is working over I2C for the validated ICODE SLIX2 card
+
 ## Known Limits
 
-- no `ISO15693` card result has been recorded yet, so the `15693` path is still
-  only partially validated
 - `ESP32_I2C_scan_14443A` and `ESP32_I2C_scan_14443A_15693` intentionally
   deactivate after each activation, so a stationary card will be printed repeatedly
 - `ESP32_I2C_polling_hotplug` is the preferred long-running demo when insert/remove
   behaviour matters
 - `ESP32_I2C_mf1_s70_read_write_test` is validated only for the current default-key
   `MIFARE One S70` card and safe data block `4`
+- `ESP32_I2C_icode_slix2_read_write_test` is validated only for the current
+  `NXP ICODE SLIX2` card and safe data block `8`
+- the multi-tech `ESP32_I2C_scan_14443A_15693` sketch was not rerun in this pass
+  with the SLIX2 card even though the underlying NFC-V path is now hardware-validated
 - I2C support should still be treated as first-pass ESP32 support, not broad
   cross-board closure
 
@@ -93,4 +111,4 @@ The current I2C examples compile for:
 
 The repository can now claim:
 
-`ESP32 I2C bring-up, ISO14443A scanning, hotplug polling, and MF1 S70 block write/read/restore are working at 100 kHz on ESP32 Dev Module for the validated hardware setup.`
+`ESP32 I2C bring-up, ISO14443A scanning, hotplug polling, MF1 S70 block write/read/restore, and ISO15693 ICODE SLIX2 single-block write/read/restore are working at 100 kHz on ESP32 Dev Module for the validated hardware setup.`

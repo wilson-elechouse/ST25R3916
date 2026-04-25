@@ -12,7 +12,7 @@ Related ELECHOUSE product:
 
 - Supported focus: `ESP32 Dev Module`
 - Primary transport: `SPI`
-- Bring-up transport: `I2C` (first-pass ESP32 hardware-validated for chip probe and `ISO14443A`)
+- Bring-up transport: `I2C` (first-pass ESP32 hardware-validated for chip probe, `ISO14443A`, and `ISO15693` `ICODE SLIX2` read/write/restore)
 
 ## Default example wiring
 
@@ -42,13 +42,14 @@ I2C examples under `examples/I2C/`:
 - `ESP32_I2C_scan_14443A_15693`
 - `ESP32_I2C_polling_hotplug`
 - `ESP32_I2C_mf1_s70_read_write_test`
+- `ESP32_I2C_icode_slix2_read_write_test`
 
 ## Notes
 
 - SPI examples use `SPIClass(VSPI)`.
 - I2C examples default to `SDA=21`, `SCL=22`, `IRQ=4`, `100kHz`.
 - I2C on ESP32 now drains IRQs in normal context instead of doing `Wire` transactions in the hardware ISR.
-- `ESP32_I2C_probe_chip` and `ESP32_I2C_scan_14443A` are hardware-validated on `ESP32 Dev Module`; the `15693` branch still needs a real `ISO15693` card result.
+- `ESP32_I2C_probe_chip`, `ESP32_I2C_scan_14443A`, and `ESP32_I2C_icode_slix2_read_write_test` are hardware-validated on `ESP32 Dev Module`.
 - SPI tuning and debug macros live in `src/st25r3916_config.h`.
 - Upstream updates are applied selectively; this library is not a mirror of the stm32duino branch.
 - Deprecated or local-only example material is intentionally kept out of this tracked library folder.
