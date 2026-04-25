@@ -44,6 +44,7 @@ I2C examples under `examples/I2C/`:
 - `ESP32_I2C_mf1_s70_read_write_test`
 - `ESP32_I2C_card_profile`
 - `ESP32_I2C_icode_slix2_read_write_test`
+- `ESP32_I2C_ndef_write_read_restore`
 - `ESP32_I2C_iso14443b_ndef_write_test`
 
 ## Notes

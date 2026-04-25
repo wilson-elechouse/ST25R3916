@@ -93,6 +93,8 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
   - One-shot card profiling for protocol, `ISO-DEP`, and NDEF visibility over I2C.
 - `ESP32_I2C_icode_slix2_read_write_test`
   - Safe ISO15693 single-block write/read/restore test over I2C, hardware-validated on `NXP ICODE SLIX2`.
+- `ESP32_I2C_ndef_write_read_restore`
+  - Generic NDEF write/read/restore test over I2C for standard writable `Type 2 / Type 4 / Type 5` cards.
 - `ESP32_I2C_iso14443b_ndef_write_test`
   - Safe `ISO14443-4B / Type 4B` NDEF write/read/restore test over I2C, hardware-validated on a writable `ISO14443B` card.
   Path: `ST25R3916_ELECHOUSE/examples/I2C/`
