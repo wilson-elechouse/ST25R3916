@@ -1,11 +1,11 @@
 /*
-  Example: ESP32_I2C_iso14443b_ndef_write_test
-  Bus: I2C
-  Wiring: SDA=21, SCL=22, IRQ=4, LED=2 (optional)
+  Example: ESP32_SPI_iso14443b_ndef_write_test
+  Bus: SPI
+  Wiring: SCK=18, MISO=19, MOSI=23, SS=5, IRQ=4, LED=2 (optional)
   Target card: ISO14443-4B / Type 4B card exposing writable NDEF
 
   Test flow:
-    1. Probe the ST25R3916 I2C address.
+    1. Initialize the ST25R3916 over SPI.
     2. Discover one ISO14443B card.
     3. Verify ISO-DEP activation and NDEF read/write availability.
     4. Read and back up the original raw NDEF message.
@@ -21,7 +21,7 @@
 */
 
 #include <Arduino.h>
-#include <Wire.h>
+#include <SPI.h>
 #include <string.h>
 
 #include <ndef_class.h>
@@ -32,12 +32,12 @@
 
 namespace {
 
-constexpr int kPinSda = ST25R3916_DEFAULT_I2C_SDA_PIN;
-constexpr int kPinScl = ST25R3916_DEFAULT_I2C_SCL_PIN;
+constexpr int kPinMosi = ST25R3916_DEFAULT_SPI_MOSI_PIN;
+constexpr int kPinMiso = ST25R3916_DEFAULT_SPI_MISO_PIN;
+constexpr int kPinSck = ST25R3916_DEFAULT_SPI_SCK_PIN;
+constexpr int kPinSs = ST25R3916_DEFAULT_SPI_SS_PIN;
 constexpr int kPinIrq = ST25R3916_DEFAULT_IRQ_PIN;
 constexpr int kPinLed = ST25R3916_DEFAULT_LED_PIN;
-constexpr uint32_t kI2cClockHz = ST25R3916_DEFAULT_I2C_FREQUENCY;
-constexpr uint8_t kI2cAddress = 0x50U;
 constexpr uint32_t kMaxMessageLen = 256U;
 constexpr uint8_t kEmptyMessagePlaceholder = 0x00U;
 
@@ -46,7 +46,8 @@ const uint8_t kTestMessage[] = {
   0x42U, 0x34U, 0x20U, 0x54U, 0x45U, 0x53U, 0x54U, 0x20U, 0x30U, 0x31U
 };
 
-RfalRfST25R3916Class gReader(&Wire, kPinIrq);
+SPIClass gSpi(VSPI);
+RfalRfST25R3916Class gReader(&gSpi, kPinSs, kPinIrq);
 RfalNfcClass gNfc(&gReader);
 NdefClass gNdef(&gNfc);
 
@@ -59,12 +60,6 @@ void waitForSerial()
   while (!Serial && ((millis() - start) < 2000UL)) {
     delay(10);
   }
-}
-
-uint8_t probeI2cAddress()
-{
-  Wire.beginTransmission(kI2cAddress);
-  return (uint8_t)Wire.endTransmission(true);
 }
 
 const char *returnCodeToString(ReturnCode code)
@@ -253,7 +248,7 @@ void runNdefWriteRestoreTest(rfalNfcDevice *device)
   formatId(device->nfcid, device->nfcidLen, id, sizeof(id));
 
   Serial.println();
-  Serial.println("=== ISO14443B NDEF Read/Write Test (I2C) ===");
+  Serial.println("=== ISO14443B NDEF Read/Write Test (SPI) ===");
   Serial.print("PUPI: ");
   Serial.println(id);
 
@@ -341,20 +336,12 @@ void setup()
 
   pinMode(kPinLed, OUTPUT);
   digitalWrite(kPinLed, LOW);
+  pinMode(kPinSs, OUTPUT);
+  digitalWrite(kPinSs, HIGH);
+  gSpi.begin(kPinSck, kPinMiso, kPinMosi, kPinSs);
 
-  Serial.println("ESP32 I2C ISO14443B NDEF write test");
+  Serial.println("ESP32 SPI ISO14443B NDEF write test");
   Serial.println("Waiting for one ISO14443B card...");
-
-  Wire.begin(kPinSda, kPinScl, kI2cClockHz);
-  delay(20);
-
-  const uint8_t probe = probeI2cAddress();
-  Serial.print("I2C ACK probe (0x50): ");
-  Serial.println((int)probe);
-  if (probe != 0U) {
-    Serial.println("No ACK from ST25R3916 I2C address.");
-    return;
-  }
 
   const ReturnCode initErr = gNfc.rfalNfcInitialize();
   printReturnCode("rfalNfcInitialize", initErr);

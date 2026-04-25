@@ -3,8 +3,7 @@
 ## Repository baseline
 
 - Local branch: `main`
-- Remote sync state: fast-forwarded to `origin/main`
-- Synced commit: `476b1c5`
+- Remote sync state: maintained on `origin/main`
 
 ## Hardware baseline
 
@@ -24,10 +23,14 @@
 
 ## Current SPI examples
 
-- `ESP32_SPI_scan_14443A`
 - `ESP32_SPI_scan_14443AB_15693`
 - `ESP32_SPI_polling_hotplug`
-- `ESP32_SPI_chip_info_debug`
+- `ESP32_SPI_card_profile`
+- `ESP32_SPI_iso14443b_ndef_write_test`
+- `ESP32_SPI_mf1_s70_read_write_test`
+- `ESP32_SPI_mf1_s70_sector_range_dump`
+- `ESP32_SPI_mf1_s70_serial_tool`
+- `ESP32_SPI_t2t_write_read_test`
 
 ## Current expectations
 
@@ -53,7 +56,9 @@
 ## Latest validation snapshot
 
 - Library examples compiled successfully with `arduino-cli` for `esp32:esp32:esp32`.
-- Top-level compatibility sketch also compiled successfully.
 - Upload to `COM3` succeeded on an `ESP32-D0WDQ6` module.
-- A minimal on-device SPI register probe returned `chipId=0x00` repeatedly.
-- Because the reader IC did not return a valid identity value, card-type validation is still blocked by hardware communication.
+- `ESP32_SPI_iso14443b_ndef_write_test` was hardware-validated on a writable `ISO14443B / Type 4B` card.
+- Observed `PUPI`: `17 0E 0D 64`
+- Original raw NDEF: `D1 01 0B 55 01 6F 6B 65 64 64 79 2E 63 6F 6D`
+- Test raw NDEF: `D1 01 0D 54 02 65 6E 42 34 20 54 45 53 54 20 30 31`
+- Write/read/restore cycle completed with `ERR_NONE` throughout.
