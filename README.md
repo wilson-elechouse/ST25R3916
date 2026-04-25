@@ -83,12 +83,22 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
   - Raw ACK + chip-ID + `rfalInitialize()` probe for the minimum hardware path. Hardware-validated.
 - `ESP32_I2C_scan_14443A`
   - First end-to-end I2C card detection example. Hardware-validated with one `ISO14443A` card.
+- `ESP32_I2C_scan_14443AB_15693`
+  - Multi-protocol I2C discovery baseline for A/B/V. Hardware-validated with the current `ISO14443A` card.
 - `ESP32_I2C_scan_14443A_15693`
   - Extended I2C scan example after the basic path is stable. Validated with the current `ISO14443A` card; `ISO15693` still needs a hardware card result.
 - `ESP32_I2C_polling_hotplug`
   - Continuous I2C polling with insert/remove reporting. Intended to replace repeated UID spam during long-running scan demos.
+- `ESP32_I2C_t2t_write_read_test`
+  - Safe raw Type 2 Tag page write/read/restore test over I2C. Also rejects non-T2T cards such as `MIFARE Classic`.
 - `ESP32_I2C_mf1_s70_read_write_test`
   - Safe MIFARE Classic S70 block write/read/restore test over I2C with default Key A.
+- `ESP32_I2C_mf1_s70_sector_dump`
+  - Read-only dump of one MIFARE Classic sector over I2C.
+- `ESP32_I2C_mf1_s70_sector_range_dump`
+  - Read-only dump across a MIFARE Classic sector range over I2C with trailer skipping.
+- `ESP32_I2C_mf1_s70_serial_tool`
+  - Interactive serial tool for read-only MF1 block/sector dump and export over I2C.
 - `ESP32_I2C_card_profile`
   - One-shot card profiling for protocol, `ISO-DEP`, and NDEF visibility over I2C.
 - `ESP32_I2C_icode_slix2_read_write_test`
