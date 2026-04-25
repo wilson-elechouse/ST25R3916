@@ -4,7 +4,8 @@
 
 I2C work in this repository has now reached first-pass hardware validation for
 ESP32 + ST25R3916 basic bring-up, `ISO14443A` scanning, and dedicated
-`ISO15693` single-block read/write/restore on `NXP ICODE SLIX2`.
+`ISO15693` single-block read/write/restore on `NXP ICODE SLIX2`, plus
+`ISO14443B / Type 4B` NDEF write/read/restore.
 
 ## Implemented I2C Artifacts
 
@@ -13,7 +14,9 @@ ESP32 + ST25R3916 basic bring-up, `ISO14443A` scanning, and dedicated
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_polling_hotplug/ESP32_I2C_polling_hotplug.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_mf1_s70_read_write_test/ESP32_I2C_mf1_s70_read_write_test.ino`
+- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_card_profile/ESP32_I2C_card_profile.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_icode_slix2_read_write_test/ESP32_I2C_icode_slix2_read_write_test.ino`
+- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_iso14443b_ndef_write_test/ESP32_I2C_iso14443b_ndef_write_test.ino`
 - low-level I2C transaction result checks in `st25r3916_com.cpp`
 - I2C-safe init branching in `rfal_rfst25r3916.cpp`
 
@@ -33,6 +36,7 @@ The current I2C examples compile for:
 - I2C clock: `100 kHz`
 - validated `ISO14443A` card: `MIFARE One S70`, UID `D9 A9 CE 70`
 - validated `ISO15693` card: `NXP ICODE SLIX2`, UID `FA F3 E3 06 09 01 04 E0`
+- validated `ISO14443B / Type 4B` card: PUPI `17 0E 0D 64`
 
 ## Hardware Validation Results
 
@@ -92,6 +96,30 @@ The current I2C examples compile for:
 - restore verification: passed
 - result: NFC-V single-block write/read/restore is working over I2C for the validated ICODE SLIX2 card
 
+### `ESP32_I2C_card_profile`
+
+- target card: current writable `ISO14443B / Type 4B` card
+- type: `ISO14443B`
+- RF interface: `ISO-DEP`
+- PUPI: `17 0E 0D 64`
+- `SENSB_RES` length: `12`
+- `ISO-DEP` support advertised: yes
+- `NDEF detect`: passed
+- `NDEF state`: `READWRITE`
+- `NDEF message length`: `15`
+- `NDEF area length`: `128`
+- result: current card is confirmed to be a writable `ISO14443-4B / Type 4B` NDEF card
+
+### `ESP32_I2C_iso14443b_ndef_write_test`
+
+- target card: current writable `ISO14443B / Type 4B` NDEF card
+- PUPI: `17 0E 0D 64`
+- initial raw NDEF: `D1 01 0B 55 01 6F 6B 65 64 64 79 2E 63 6F 6D`
+- test raw NDEF: `D1 01 0D 54 02 65 6E 42 34 20 54 45 53 54 20 30 31`
+- NDEF write/read/restore cycle: passed
+- restore verification: passed
+- result: `ISO14443B / Type 4B` NDEF writing is working over I2C for the validated card
+
 ## Known Limits
 
 - `ESP32_I2C_scan_14443A` and `ESP32_I2C_scan_14443A_15693` intentionally
@@ -102,6 +130,8 @@ The current I2C examples compile for:
   `MIFARE One S70` card and safe data block `4`
 - `ESP32_I2C_icode_slix2_read_write_test` is validated only for the current
   `NXP ICODE SLIX2` card and safe data block `8`
+- `ESP32_I2C_iso14443b_ndef_write_test` is validated only for the current writable
+  `ISO14443B / Type 4B` NDEF card
 - the multi-tech `ESP32_I2C_scan_14443A_15693` sketch was not rerun in this pass
   with the SLIX2 card even though the underlying NFC-V path is now hardware-validated
 - I2C support should still be treated as first-pass ESP32 support, not broad
@@ -111,4 +141,4 @@ The current I2C examples compile for:
 
 The repository can now claim:
 
-`ESP32 I2C bring-up, ISO14443A scanning, hotplug polling, MF1 S70 block write/read/restore, and ISO15693 ICODE SLIX2 single-block write/read/restore are working at 100 kHz on ESP32 Dev Module for the validated hardware setup.`
+`ESP32 I2C bring-up, ISO14443A scanning, hotplug polling, MF1 S70 block write/read/restore, ISO15693 ICODE SLIX2 single-block write/read/restore, and ISO14443B / Type 4B NDEF write/read/restore are working at 100 kHz on ESP32 Dev Module for the validated hardware setup.`
