@@ -20,7 +20,7 @@ Before hardware validation starts, the repository should have:
 - I2C init isolated from SPI-only assumptions
 - a basic `ESP32_I2C_probe_chip` example
 - a basic `ESP32_I2C_scan_14443A` example
-- an extended `ESP32_I2C_scan_14443A_15693` example
+- an extended `ESP32_I2C_scan_14443AB_15693` example
 - documented I2C wiring for the validated ESP32 board
 
 ## Hardware To Record During Validation
@@ -104,8 +104,8 @@ Minimum hardware repetition:
 
 Target example:
 
-- `examples/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
-  Current library path: `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443A_15693/`
+- `examples/ESP32_I2C_scan_14443AB_15693/ESP32_I2C_scan_14443AB_15693.ino`
+  Current library path: `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443AB_15693/`
 
 Goal:
 

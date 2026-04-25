@@ -14,11 +14,9 @@ diagnostic sketches.
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_probe_chip/ESP32_I2C_probe_chip.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443A/ESP32_I2C_scan_14443A.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443AB_15693/ESP32_I2C_scan_14443AB_15693.ino`
-- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_polling_hotplug/ESP32_I2C_polling_hotplug.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_t2t_write_read_test/ESP32_I2C_t2t_write_read_test.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_mf1_s70_read_write_test/ESP32_I2C_mf1_s70_read_write_test.ino`
-- `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_mf1_s70_sector_dump/ESP32_I2C_mf1_s70_sector_dump.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_mf1_s70_sector_range_dump/ESP32_I2C_mf1_s70_sector_range_dump.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_mf1_s70_serial_tool/ESP32_I2C_mf1_s70_serial_tool.ino`
 - `ST25R3916_ELECHOUSE/examples/I2C/ESP32_I2C_card_profile/ESP32_I2C_card_profile.ino`
@@ -74,13 +72,6 @@ The current I2C examples compile for:
 - observed UID: `3B 58 C0 38`
 - observed classification: `ISO14443A`
 - result: the direct I2C counterpart of the SPI `A/B/V` scanner is working on hardware
-
-### `ESP32_I2C_scan_14443A_15693`
-
-- initialization: passed
-- multi-tech loop with current `ISO14443A` card: passed
-- observed UID: `D9 A9 CE 70`
-- result: extended I2C scan remains stable with `A + V` polling enabled
 
 ### `ESP32_I2C_polling_hotplug`
 
@@ -174,7 +165,7 @@ The current I2C examples compile for:
 
 ## Known Limits
 
-- `ESP32_I2C_scan_14443A` and `ESP32_I2C_scan_14443A_15693` intentionally
+- `ESP32_I2C_scan_14443A` and `ESP32_I2C_scan_14443AB_15693` intentionally
   deactivate after each activation, so a stationary card will be printed repeatedly
 - `ESP32_I2C_polling_hotplug` is the preferred long-running demo when insert/remove
   behaviour matters
@@ -186,9 +177,8 @@ The current I2C examples compile for:
   writable `ISO14443A / Type 2` NDEF card
 - `ESP32_I2C_iso14443b_ndef_write_test` is validated only for the current writable
   `ISO14443B / Type 4B` NDEF card
-- `ESP32_I2C_mf1_s70_sector_dump` compiles and shares the same MF1 helper path, but this pass focused hardware time on the wider `sector_range_dump` and `serial_tool` variants
-- the multi-tech `ESP32_I2C_scan_14443A_15693` sketch was not rerun in this pass
-  with the SLIX2 card even though the underlying NFC-V path is now hardware-validated
+- the multi-tech `ESP32_I2C_scan_14443AB_15693` sketch has only been rerun in this pass
+  with the current `ISO14443A` card; a fresh `ISO15693` recheck remains optional
 - I2C support should still be treated as first-pass ESP32 support, not broad
   cross-board closure
 

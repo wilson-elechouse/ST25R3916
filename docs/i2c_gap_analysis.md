@@ -39,7 +39,7 @@ low-level I2C transaction branches:
 | I2C speed configuration | Missing | No explicit `Wire.setClock()` path |
 | ESP32 SDA/SCL pin configuration | Missing | No library-level API or example for choosing pins |
 | `Wire.begin(...)` ownership | Missing | Library assumes caller prepared the bus |
-| I2C example sketches | Present | `ESP32_I2C_probe_chip`, `ESP32_I2C_scan_14443A`, and `ESP32_I2C_scan_14443A_15693` now exist |
+| I2C example sketches | Present | `ESP32_I2C_probe_chip`, `ESP32_I2C_scan_14443A`, and `ESP32_I2C_scan_14443AB_15693` now exist |
 | I2C documentation | Partial | Wiring and validation notes exist, but hardware closure is still pending |
 | I2C-specific validation results | Partial | Compile closure exists; ESP32 hardware validation is still missing |
 
@@ -141,7 +141,7 @@ lacks the hardware closure needed to claim support:
 
 - `examples/I2C/ESP32_I2C_probe_chip/ESP32_I2C_probe_chip.ino`
 - `examples/I2C/ESP32_I2C_scan_14443A/ESP32_I2C_scan_14443A.ino`
-- `examples/I2C/ESP32_I2C_scan_14443A_15693/ESP32_I2C_scan_14443A_15693.ino`
+- `examples/I2C/ESP32_I2C_scan_14443AB_15693/ESP32_I2C_scan_14443AB_15693.ino`
 - compile closure
 - known-good hardware validation results
 

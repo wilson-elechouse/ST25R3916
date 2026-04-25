@@ -31,7 +31,6 @@ SPI examples under `examples/SPI/`:
 - `ESP32_SPI_polling_hotplug`
 - `ESP32_SPI_card_profile`
 - `ESP32_SPI_mf1_s70_read_write_test`
-- `ESP32_SPI_mf1_s70_sector_dump`
 - `ESP32_SPI_mf1_s70_sector_range_dump`
 - `ESP32_SPI_mf1_s70_serial_tool`
 
@@ -40,11 +39,9 @@ I2C examples under `examples/I2C/`:
 - `ESP32_I2C_probe_chip`
 - `ESP32_I2C_scan_14443A`
 - `ESP32_I2C_scan_14443AB_15693`
-- `ESP32_I2C_scan_14443A_15693`
 - `ESP32_I2C_polling_hotplug`
 - `ESP32_I2C_t2t_write_read_test`
 - `ESP32_I2C_mf1_s70_read_write_test`
-- `ESP32_I2C_mf1_s70_sector_dump`
 - `ESP32_I2C_mf1_s70_sector_range_dump`
 - `ESP32_I2C_mf1_s70_serial_tool`
 - `ESP32_I2C_card_profile`
