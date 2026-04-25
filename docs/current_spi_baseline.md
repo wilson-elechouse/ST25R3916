@@ -27,6 +27,7 @@
 - `ESP32_SPI_polling_hotplug`
 - `ESP32_SPI_card_profile`
 - `ESP32_SPI_iso14443b_ndef_write_test`
+- `ESP32_SPI_icode_slix2_read_write_test`
 - `ESP32_SPI_mf1_s70_read_write_test`
 - `ESP32_SPI_mf1_s70_sector_range_dump`
 - `ESP32_SPI_mf1_s70_serial_tool`
@@ -61,4 +62,11 @@
 - Observed `PUPI`: `17 0E 0D 64`
 - Original raw NDEF: `D1 01 0B 55 01 6F 6B 65 64 64 79 2E 63 6F 6D`
 - Test raw NDEF: `D1 01 0D 54 02 65 6E 42 34 20 54 45 53 54 20 30 31`
+- Write/read/restore cycle completed with `ERR_NONE` throughout.
+- `ESP32_SPI_icode_slix2_read_write_test` was hardware-validated on a current `NXP ICODE` `ISO15693` card.
+- Observed UID: `67 A6 D6 07 00 02 04 E0`
+- Observed IC reference: `0x02`
+- Observed block count and size: `40` blocks, `4` bytes per block
+- Original block `8`: `00 00 00 00`
+- Test pattern: `5A 6B 7C 8D`
 - Write/read/restore cycle completed with `ERR_NONE` throughout.

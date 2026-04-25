@@ -61,6 +61,8 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
   - One-shot card profiling for protocol/subtype/NDEF visibility.
 - `ESP32_SPI_iso14443b_ndef_write_test`
   - Safe `ISO14443-4B / Type 4B` NDEF write/read/restore test over SPI, hardware-validated on a writable `ISO14443B` card.
+- `ESP32_SPI_icode_slix2_read_write_test`
+  - Safe `ISO15693 / NFC-V` single-block write/read/restore test over SPI, hardware-validated on a current `NXP ICODE` card.
 - `ESP32_SPI_mf1_s70_read_write_test`
   - Safe MIFARE Classic S70 block write/read/restore test with default key flow.
 - `ESP32_SPI_mf1_s70_sector_range_dump`
