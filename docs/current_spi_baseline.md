@@ -28,6 +28,7 @@
 - `ESP32_SPI_card_profile`
 - `ESP32_SPI_iso14443b_ndef_write_test`
 - `ESP32_SPI_icode_slix2_read_write_test`
+- `ESP32_SPI_ndef_write_read_restore`
 - `ESP32_SPI_mf1_s70_read_write_test`
 - `ESP32_SPI_mf1_s70_sector_range_dump`
 - `ESP32_SPI_mf1_s70_serial_tool`
@@ -69,4 +70,9 @@
 - Observed block count and size: `40` blocks, `4` bytes per block
 - Original block `8`: `00 00 00 00`
 - Test pattern: `5A 6B 7C 8D`
+- Write/read/restore cycle completed with `ERR_NONE` throughout.
+- `ESP32_SPI_ndef_write_read_restore` was hardware-validated on a writable `ISO14443A / Type 2` NDEF card.
+- Observed UID: `04 3F 45 32 F3 1C 90`
+- Original raw NDEF: `D1 01 0B 55 01 6F 6B 65 64 64 79 2E 63 6F 6D`
+- Test raw NDEF: `D1 01 12 54 02 65 6E 45 4C 45 43 48 4F 55 53 45 20 4E 44 45 46 20 31 00`
 - Write/read/restore cycle completed with `ERR_NONE` throughout.
