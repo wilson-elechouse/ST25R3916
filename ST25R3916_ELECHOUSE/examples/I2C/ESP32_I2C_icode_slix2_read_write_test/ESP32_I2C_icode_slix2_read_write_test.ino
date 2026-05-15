@@ -1,7 +1,7 @@
 /*
   Example: ESP32_I2C_icode_slix2_read_write_test
   Bus: I2C
-  Wiring: SDA=21, SCL=22, IRQ=4, LED=2 (optional)
+  Default wiring: ESP32 SDA=21/SCL=22; ESP32-S3 SDA=8/SCL=9; IRQ=4; LED=2 (optional)
   Target card: ISO15693 / NFC-V, validated on NXP ICODE SLIX2
 
   Usage:
@@ -45,11 +45,21 @@
 
 namespace {
 
-constexpr int kPinSda = ST25R3916_DEFAULT_I2C_SDA_PIN;
-constexpr int kPinScl = ST25R3916_DEFAULT_I2C_SCL_PIN;
-constexpr int kPinIrq = ST25R3916_DEFAULT_IRQ_PIN;
-constexpr int kPinLed = ST25R3916_DEFAULT_LED_PIN;
-constexpr uint32_t kI2cClockHz = ST25R3916_DEFAULT_I2C_FREQUENCY;
+#if defined(CONFIG_IDF_TARGET_ESP32S3) || defined(ARDUINO_ESP32S3_DEV)
+// ESP32-S3 default I2C wiring. Edit these values to match your board.
+constexpr int kPinSda = 8;
+constexpr int kPinScl = 9;
+constexpr int kPinIrq = 4;
+constexpr int kPinLed = 2;
+constexpr uint32_t kI2cClockHz = 100000UL;
+#else
+// Classic ESP32 default I2C wiring. Edit these values to match your board.
+constexpr int kPinSda = 21;
+constexpr int kPinScl = 22;
+constexpr int kPinIrq = 4;
+constexpr int kPinLed = 2;
+constexpr uint32_t kI2cClockHz = 100000UL;
+#endif
 constexpr uint8_t kI2cAddress = 0x50U;
 
 constexpr uint16_t kPreferredTestBlock = 8U;

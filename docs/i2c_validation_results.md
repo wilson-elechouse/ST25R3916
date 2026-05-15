@@ -85,11 +85,11 @@ The current I2C examples compile for:
 - target card: `MIFARE One S70 / MIFARE Classic 4K`
 - default key: `FF FF FF FF FF FF`
 - authentication to `block 4`: passed
-- write/read/restore cycle on `block 4`: passed
+- historical ESP32 Dev Module write/read/restore cycle on `block 4`: passed on the then-current validation card
 - original block: `53 54 32 35 52 33 39 31 36 20 44 45 4D 4F 30 31`
 - test pattern: `F6 F1 97 90 F7 96 9C 94 93 85 E1 E0 E8 EA 95 94`
 - restore verification: passed
-- result: MF1 helper path is working over I2C for the validated S70 card
+- current default behavior is guarded by `kEnableWriteTest=false`; see the ESP32-S3 S70 notes below for the latest write-status limitation
 
 ### `ESP32_I2C_t2t_write_read_test`
 
@@ -163,14 +163,46 @@ The current I2C examples compile for:
 - restore verification: passed
 - result: generic I2C NDEF write/read/restore is working on the validated Type 2 NDEF card
 
+## ESP32-S3 I2C Validation
+
+- Date: `2026-05-15`
+- Board: `ESP32-S3-N16R8`
+- Upload port: `COM7` (`USB-SERIAL CH340`)
+- Arduino target: `esp32:esp32:esp32s3`
+- Board options used for validation: `FlashSize=16M`, `PSRAM=opi`, `USBMode=hwcdc`, `CDCOnBoot=default`, `UploadMode=default`, `FlashMode=qio`, `PartitionScheme=app3M_fat9M_16MB`
+- I2C wiring: `SDA=GPIO8`, `SCL=GPIO9`, `IRQ=GPIO4`
+- I2C clock: `100 kHz` for the general bring-up examples; `400 kHz` for the MF1 S70 write-test sketch
+- `ESP32_I2C_probe_chip`: ACK on address `0x50`, `IC_IDENTITY=0x2A`, `rfalInitialize()=ERR_NONE`
+- `ESP32_I2C_card_profile`: detected `ISO15693`, UID `50 0A 3F 10 53 01 04 E0`, NDEF `READWRITE`
+- NDEF area length: `104`
+- NDEF available space: `102`
+- Original raw NDEF: `D1 01 0B 55 01 6F 6B 65 64 64 79 2E 63 6F 6D`
+- `ESP32_I2C_icode_slix2_read_write_test`: completed a single-block write/read/restore cycle
+- ISO15693 block count and size: `28` blocks, `4` bytes per block
+- ISO15693 test block: `8`
+- ISO15693 original block `8`: `00 00 00 00`
+- ISO15693 test pattern: `5A 6B 7C 8D`
+- ISO15693 restore verification: passed
+- `ESP32_I2C_ndef_write_read_restore`: completed a Type 5 NDEF write/read/restore cycle
+- Test raw NDEF: `D1 01 12 54 02 65 6E 45 4C 45 43 48 4F 55 53 45 20 4E 44 45 46 20 31 00`
+- Type 5 NDEF restore verification: passed
+- S70 card swapped in after the ISO15693 pass: UID `3B 58 C0 38`, ATQA `02 00`, SAK `18`
+- `ESP32_I2C_card_profile`: detected the S70 as `MIFARE Classic 4K`; NDEF detection returned `ERR_PROTO`, expected for this proprietary card type
+- `ESP32_I2C_mf1_s70_sector_range_dump`: sector `1-2` read path passed; block `4` was confirmed restored to `00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00`
+- local trailer read of sector `1` showed default access bytes `FF 07 80 69`
+- `ESP32_I2C_mf1_s70_read_write_test`: now defaults to read/auth only with `kEnableWriteTest=false`
+- optional write-test finding: at `100 kHz`, MF1 data-block writes did not reliably complete; at `400 kHz`, a non-zero block write and readback passed, but restore status was not reliable (`ERR_TIMEOUT` / `ERR_PROTO` even when a later read showed the restore had landed)
+
 ## Known Limits
 
 - `ESP32_I2C_scan_14443A` and `ESP32_I2C_scan_14443AB_15693` intentionally
   deactivate after each activation, so a stationary card will be printed repeatedly
 - `ESP32_I2C_polling_hotplug` is the preferred long-running demo when insert/remove
   behaviour matters
-- `ESP32_I2C_mf1_s70_read_write_test` is validated only for the current default-key
-  `MIFARE One S70` card and safe data block `4`
+- `ESP32_I2C_mf1_s70_read_write_test` defaults to read/auth only on S70. Set
+  `kEnableWriteTest=true` manually only on a sacrificial card/block. The S70 write
+  path needs `400 kHz` I2C and still has unreliable final write status reporting on
+  the current default-key card.
 - `ESP32_I2C_icode_slix2_read_write_test` is validated only for the current
   `NXP ICODE SLIX2` card and safe data block `8`
 - `ESP32_I2C_ndef_write_read_restore` is validated in this pass on the current
@@ -186,4 +218,4 @@ The current I2C examples compile for:
 
 The repository can now claim:
 
-`ESP32 I2C bring-up, ISO14443A scanning, direct A/B/V scanning, hotplug polling, MF1 S70 block write/read/restore, MF1 sector-range dump, MF1 serial diagnostics, ISO15693 ICODE SLIX2 single-block write/read/restore, ISO14443B / Type 4B NDEF write/read/restore, and generic NDEF write/read/restore on a writable Type 2 card are working at 100 kHz on ESP32 Dev Module for the validated hardware setup.`
+`ESP32 I2C bring-up, ISO14443A scanning, direct A/B/V scanning, hotplug polling, MF1 S70 read/auth/dump diagnostics, ISO15693 ICODE SLIX2 single-block write/read/restore, ISO14443B / Type 4B NDEF write/read/restore, and generic NDEF write/read/restore on a writable Type 2 card are working at 100 kHz on ESP32 Dev Module for the validated hardware setup. The MF1 S70 write test is now guarded by kEnableWriteTest and requires the faster 400 kHz I2C setting when deliberately enabled.`

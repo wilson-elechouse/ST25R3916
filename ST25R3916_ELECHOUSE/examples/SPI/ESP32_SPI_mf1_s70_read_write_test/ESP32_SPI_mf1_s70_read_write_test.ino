@@ -1,7 +1,7 @@
 /*
   Example: ESP32_SPI_mf1_s70_read_write_test
   Bus: SPI
-  Wiring: SCK=18, MISO=19, MOSI=23, SS=5, IRQ=4, LED=2 (optional)
+  Default wiring: ESP32 SCK=18/MISO=19/MOSI=23/SS=5; ESP32-S3 SCK=12/MISO=13/MOSI=11/SS=10; IRQ=4; LED=2 (optional)
   Target card: MIFARE One S70 / MIFARE Classic 4K
 
   Test flow:
@@ -31,12 +31,25 @@
 
 namespace {
 
-constexpr int kPinMosi = ST25R3916_DEFAULT_SPI_MOSI_PIN;
-constexpr int kPinMiso = ST25R3916_DEFAULT_SPI_MISO_PIN;
-constexpr int kPinSck = ST25R3916_DEFAULT_SPI_SCK_PIN;
-constexpr int kPinSs = ST25R3916_DEFAULT_SPI_SS_PIN;
-constexpr int kPinIrq = ST25R3916_DEFAULT_IRQ_PIN;
-constexpr int kPinLed = ST25R3916_DEFAULT_LED_PIN;
+#if defined(CONFIG_IDF_TARGET_ESP32S3) || defined(ARDUINO_ESP32S3_DEV)
+// ESP32-S3-N16R8 default SPI wiring. Edit these values to match your board.
+constexpr uint8_t kSpiBus = FSPI;
+constexpr int kPinSck = 12;
+constexpr int kPinMiso = 13;
+constexpr int kPinMosi = 11;
+constexpr int kPinSs = 10;
+constexpr int kPinIrq = 4;
+constexpr int kPinLed = 2;
+#else
+// Classic ESP32 default SPI wiring. Edit these values to match your board.
+constexpr uint8_t kSpiBus = VSPI;
+constexpr int kPinSck = 18;
+constexpr int kPinMiso = 19;
+constexpr int kPinMosi = 23;
+constexpr int kPinSs = 5;
+constexpr int kPinIrq = 4;
+constexpr int kPinLed = 2;
+#endif
 
 constexpr uint8_t kTestBlock = 4U;
 constexpr uint8_t kDefaultKeyA[RFAL_MF1_KEY_LEN] = {
@@ -47,7 +60,7 @@ constexpr uint8_t kBaselineBlock4[RFAL_MF1_BLOCK_LEN] = {
   0x36U, 0x20U, 0x44U, 0x45U, 0x4DU, 0x4FU, 0x30U, 0x31U
 };
 
-SPIClass gSpi(VSPI);
+SPIClass gSpi(kSpiBus);
 RfalRfST25R3916Class gReader(&gSpi, kPinSs, kPinIrq);
 RfalNfcClass gNfc(&gReader);
 RfalMf1Class gMf1(&gReader);

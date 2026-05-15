@@ -1,13 +1,13 @@
 # ST25R3916 for ESP32
 
 This repository is an ESP32-focused fork of the ST25R3916 + NFC-RFAL Arduino libraries.
-The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C bring-up is also validated in this branch for chip probe, `ISO14443A` scanning, dedicated `ISO15693` block read/write/restore on `NXP ICODE SLIX2`, and `ISO14443B / Type 4B` NDEF write/read/restore at `100 kHz`.
+The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C bring-up is also validated in this branch for chip probe, `ISO14443A` scanning, S70 read/auth/dump diagnostics, dedicated `ISO15693` block read/write/restore on `NXP ICODE SLIX2`, and `ISO14443B / Type 4B` NDEF write/read/restore at `100 kHz`.
 
 `ST25R3916_ELECHOUSE` examples still depend on the sibling `NFC-RFAL` library.
 
 ## Related Product
 
-- ELECHOUSE product page: `https://www.elechouse.com/product/st25r3916_nfc_reader/`
+- ELECHOUSE product page: `https://www.elechouse.com/product/st25r3916b-nfc-module/`
 - The stock ELECHOUSE ST25R3916 product page is the main hardware reference for this repository.
 - For the stock product, use the `SPI` examples first.
 - The `I2C` examples in this repository are kept as an additional validated code path for custom or alternate hardware setups; they should not be confused with the stock product quick-start path.
@@ -40,9 +40,13 @@ Install both library folders into your Arduino libraries path:
 1. `NFC-RFAL`
 2. `ST25R3916_ELECHOUSE`
 
-Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
+Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the classic ESP32 target board.
+For `ESP32-S3-N16R8`, use `esp32:esp32:esp32s3` (`ESP32S3 Dev Module`) with `FlashSize=16M` and `PSRAM=opi`.
+On CH340-based ESP32-S3 boards, keep `CDCOnBoot=default` so `Serial` logs stay on the CH340 COM port.
 
 ### Default SPI wiring
+
+Classic ESP32 default:
 
 - `SCK` -> `GPIO18`
 - `MISO` -> `GPIO19`
@@ -51,8 +55,19 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
 - `IRQ` -> `GPIO4`
 - `LED` -> `GPIO2` (optional status LED)
 
+ESP32-S3 default:
+
+- `SCK` -> `GPIO12`
+- `MISO` -> `GPIO13`
+- `MOSI` -> `GPIO11`
+- `SS` -> `GPIO10`
+- `IRQ` -> `GPIO4`
+- `LED` -> `GPIO2` (optional status LED)
+
 ### Current SPI examples
 
+- `ESP32_SPI_scan_14443A_led`
+  - ISO14443A-only continuous polling test. Prints the UID repeatedly while a card is present and blinks `GPIO2` / D2.
 - `ESP32_SPI_scan_14443AB_15693`
   - Multi-protocol discovery baseline for A/B/V.
 - `ESP32_SPI_polling_hotplug`
@@ -94,7 +109,7 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
 - `ESP32_I2C_t2t_write_read_test`
   - Safe raw Type 2 Tag page write/read/restore test over I2C. Also rejects non-T2T cards such as `MIFARE Classic`.
 - `ESP32_I2C_mf1_s70_read_write_test`
-  - Safe MIFARE Classic S70 block write/read/restore test over I2C with default Key A.
+  - MIFARE Classic S70 block read/auth test over I2C with default Key A. The write portion is guarded by `kEnableWriteTest=false`; set it to `true` only on a sacrificial card/block. The sketch uses `400 kHz` I2C when write testing is deliberately enabled.
 - `ESP32_I2C_mf1_s70_sector_range_dump`
   - Read-only dump across a MIFARE Classic sector range over I2C with trailer skipping.
 - `ESP32_I2C_mf1_s70_serial_tool`
@@ -111,7 +126,8 @@ Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the target board.
 
 ## Notes
 
-- SPI examples use `SPIClass(VSPI)`.
+- SPI examples declare their SPI bus and pin numbers near the top of each `.ino` file. Edit `kSpiBus`, `kPinSck`, `kPinMiso`, `kPinMosi`, `kPinSs`, `kPinIrq`, and `kPinLed` directly in the example when using custom wiring.
+- I2C examples also declare their pin numbers near the top of each `.ino` file. Edit `kPinSda`, `kPinScl`, `kPinIrq`, `kPinLed`, and `kI2cClockHz` directly in the example when using custom wiring.
 - I2C examples assume the caller wants the library sketches to own `Wire.begin(...)` with the default ESP32 pins shown above.
 - I2C on ESP32 now avoids doing `Wire` transactions in the hardware ISR path; IRQs are drained in normal context.
 - Optional serial debug logging is controlled through `ST25R3916_ENABLE_DEBUG_LOG` in `ST25R3916_ELECHOUSE/src/st25r3916_config.h`.

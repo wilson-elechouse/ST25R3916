@@ -3,9 +3,9 @@
   Bus: I2C
   Goal: Verify the minimum ESP32 <-> ST25R3916 I2C communication path before any card polling.
 
-  Default wiring for ESP32 Dev Module:
-  - SDA -> GPIO21
-  - SCL -> GPIO22
+  Default wiring:
+  - ESP32: SDA -> GPIO21, SCL -> GPIO22
+  - ESP32-S3: SDA -> GPIO8, SCL -> GPIO9
   - IRQ -> GPIO4
   - GND -> GND
   - VCC -> board supply required by your ST25R3916 module
@@ -34,10 +34,20 @@
 
 namespace {
 
+#if defined(CONFIG_IDF_TARGET_ESP32S3) || defined(ARDUINO_ESP32S3_DEV)
+// ESP32-S3 default I2C wiring. Edit these values to match your board.
+constexpr int kPinSda = 8;
+constexpr int kPinScl = 9;
+constexpr int kPinIrq = 4;
+constexpr uint32_t kI2cClockHz = 100000UL;
+#else
+// Classic ESP32 default I2C wiring. Edit these values to match your board.
 constexpr int kPinSda = 21;
 constexpr int kPinScl = 22;
-constexpr int kPinIrq = ST25R3916_DEFAULT_IRQ_PIN;
+constexpr int kPinIrq = 4;
 constexpr uint32_t kI2cClockHz = 100000UL;
+#endif
+
 constexpr uint8_t kI2cAddress = 0x50U;
 
 RfalRfST25R3916Class gReader(&Wire, kPinIrq);

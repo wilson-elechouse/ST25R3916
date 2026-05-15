@@ -1,7 +1,7 @@
 /*
   Example: ESP32_I2C_mf1_s70_read_write_test
   Bus: I2C
-  Wiring: SDA=21, SCL=22, IRQ=4, LED=2 (optional)
+  Default wiring: ESP32 SDA=21/SCL=22; ESP32-S3 SDA=8/SCL=9; IRQ=4; LED=2 (optional)
   Target card: MIFARE One S70 / MIFARE Classic 4K
 
   Test flow:
@@ -9,15 +9,15 @@
     2. Detect a likely S70 card by ATQA/SAK
     3. Authenticate to block 4 with default Key A = FF FF FF FF FF FF
     4. Read block 4 and save a backup
-    5. Write a 16-byte test pattern
-    6. Read block 4 again and verify
-    7. Restore the original block contents
-    8. Read block 4 again and verify restore
+    5. Stop without writing when kEnableWriteTest=false
+    6. If explicitly enabled, write a 16-byte test pattern
+    7. Read block 4 again and verify
+    8. Restore the original block contents and verify restore
 
   Safety:
     - Uses block 4, which is a normal data block in sector 1
     - Does not touch block 0 or a sector trailer
-    - Always attempts to restore the original 16 bytes before finishing
+    - Write mode is disabled by default; set kEnableWriteTest=true below only on a sacrificial card/block
 */
 
 #include <Arduino.h>
@@ -32,12 +32,25 @@
 
 namespace {
 
-constexpr int kPinSda = ST25R3916_DEFAULT_I2C_SDA_PIN;
-constexpr int kPinScl = ST25R3916_DEFAULT_I2C_SCL_PIN;
-constexpr int kPinIrq = ST25R3916_DEFAULT_IRQ_PIN;
-constexpr int kPinLed = ST25R3916_DEFAULT_LED_PIN;
-constexpr uint32_t kI2cClockHz = ST25R3916_DEFAULT_I2C_FREQUENCY;
+#if defined(CONFIG_IDF_TARGET_ESP32S3) || defined(ARDUINO_ESP32S3_DEV)
+// ESP32-S3 default I2C wiring. Edit these values to match your board.
+constexpr int kPinSda = 8;
+constexpr int kPinScl = 9;
+constexpr int kPinIrq = 4;
+constexpr int kPinLed = 2;
+// MF1 write needs a fast I2C bus so the data frame follows the card ACK quickly.
+constexpr uint32_t kI2cClockHz = 400000UL;
+#else
+// Classic ESP32 default I2C wiring. Edit these values to match your board.
+constexpr int kPinSda = 21;
+constexpr int kPinScl = 22;
+constexpr int kPinIrq = 4;
+constexpr int kPinLed = 2;
+// MF1 write needs a fast I2C bus so the data frame follows the card ACK quickly.
+constexpr uint32_t kI2cClockHz = 400000UL;
+#endif
 constexpr uint8_t kI2cAddress = 0x50U;
+constexpr bool kEnableWriteTest = false;
 
 constexpr uint8_t kTestBlock = 4U;
 constexpr uint8_t kDefaultKeyA[RFAL_MF1_KEY_LEN] = {
@@ -47,10 +60,15 @@ constexpr uint8_t kBaselineBlock4[RFAL_MF1_BLOCK_LEN] = {
   0x53U, 0x54U, 0x32U, 0x35U, 0x52U, 0x33U, 0x39U, 0x31U,
   0x36U, 0x20U, 0x44U, 0x45U, 0x4DU, 0x4FU, 0x30U, 0x31U
 };
+constexpr uint8_t kPreferredTestBlock4[RFAL_MF1_BLOCK_LEN] = {
+  0x49U, 0x32U, 0x43U, 0x20U, 0x53U, 0x37U, 0x30U, 0x20U,
+  0x54U, 0x45U, 0x53U, 0x54U, 0x20U, 0x30U, 0x30U, 0x31U
+};
 
 RfalRfST25R3916Class gReader(&Wire, kPinIrq);
 RfalNfcClass gNfc(&gReader);
 RfalMf1Class gMf1(&gReader);
+rfalNfcDiscoverParam gDiscoverParams = {};
 
 bool gTestPending = false;
 bool gTestDone = false;
@@ -143,6 +161,19 @@ void printReturnCode(const char *label, ReturnCode err)
   Serial.println(")");
 }
 
+void printNonce(uint32_t cardNonce)
+{
+  uint8_t nonceBytes[4] = {
+    (uint8_t)(cardNonce >> 24),
+    (uint8_t)(cardNonce >> 16),
+    (uint8_t)(cardNonce >> 8),
+    (uint8_t)cardNonce
+  };
+
+  Serial.print("Card challenge Nt: ");
+  printBytes(nonceBytes, sizeof(nonceBytes));
+}
+
 void onNfcStateChange(rfalNfcState state)
 {
   if ((state == RFAL_NFC_STATE_ACTIVATED) && !gTestDone) {
@@ -178,9 +209,88 @@ void printCardSummary(const rfalNfcDevice *device)
   printBytes(kDefaultKeyA, sizeof(kDefaultKeyA));
 }
 
-bool readBlockAndLog(rfalMf1CryptoState *crypto, uint8_t blockNo, const char *label, uint8_t *blockData)
+bool reacquireCard(uint32_t expectedUid, rfalNfcDevice **device)
 {
-  const ReturnCode err = gMf1.readBlock(crypto, blockNo, blockData);
+  ReturnCode err;
+  const unsigned long deadline = millis() + 1500UL;
+
+  if (device == NULL) {
+    return false;
+  }
+  *device = NULL;
+
+  if (gNfc.rfalNfcGetState() > RFAL_NFC_STATE_IDLE) {
+    err = gNfc.rfalNfcDeactivate(false);
+    if (err != ERR_NONE) {
+      printReturnCode("Deactivate before re-discover", err);
+      return false;
+    }
+    delay(10);
+  }
+
+  err = gNfc.rfalNfcDiscover(&gDiscoverParams);
+  if (err != ERR_NONE) {
+    printReturnCode("Re-discover", err);
+    return false;
+  }
+
+  while (millis() < deadline) {
+    rfalNfcDevice *activeDevice = NULL;
+    uint32_t activeUid = 0U;
+
+    gNfc.rfalNfcWorker();
+    if (gNfc.rfalNfcGetState() != RFAL_NFC_STATE_ACTIVATED) {
+      delay(1);
+      continue;
+    }
+
+    err = gNfc.rfalNfcGetActiveDevice(&activeDevice);
+    if ((err != ERR_NONE) || !RfalMf1Class::isLikelyClassic4K(activeDevice)) {
+      delay(1);
+      continue;
+    }
+
+    if (!RfalMf1Class::getUid32(activeDevice, &activeUid) || (activeUid != expectedUid)) {
+      Serial.println("Re-discovered card UID does not match the expected S70 card.");
+      return false;
+    }
+
+    delay(60);
+    *device = activeDevice;
+    return true;
+  }
+
+  Serial.println("Timed out while re-activating the S70 card.");
+  return false;
+}
+
+bool authenticateBlock(rfalNfcDevice *device, uint8_t blockNo, rfalMf1CryptoState *crypto)
+{
+  uint32_t cardNonce = 0U;
+  const ReturnCode authErr = gMf1.authenticate(crypto, device, blockNo, kDefaultKeyA, RFAL_MF1_AUTH_KEY_A, &cardNonce);
+  printReturnCode("AUTH result", authErr);
+  if (authErr != ERR_NONE) {
+    return false;
+  }
+
+  printNonce(cardNonce);
+  return true;
+}
+
+bool readBlockAndLog(uint32_t expectedUid, uint8_t blockNo, const char *label, uint8_t *blockData)
+{
+  rfalNfcDevice *device = NULL;
+  rfalMf1CryptoState crypto = {};
+
+  if (!reacquireCard(expectedUid, &device)) {
+    return false;
+  }
+
+  if (!authenticateBlock(device, blockNo, &crypto)) {
+    return false;
+  }
+
+  const ReturnCode err = gMf1.readBlock(&crypto, blockNo, blockData);
   printReturnCode("READ result", err);
   if (err != ERR_NONE) {
     return false;
@@ -192,7 +302,7 @@ bool readBlockAndLog(rfalMf1CryptoState *crypto, uint8_t blockNo, const char *la
   return true;
 }
 
-bool writeBlockAndLog(rfalMf1CryptoState *crypto,
+bool writeBlockAndLog(uint32_t expectedUid,
                       uint8_t blockNo,
                       const uint8_t *blockData,
                       const char *label,
@@ -204,9 +314,46 @@ bool writeBlockAndLog(rfalMf1CryptoState *crypto,
     printBytes(blockData, RFAL_MF1_BLOCK_LEN);
   }
 
-  const ReturnCode err = gMf1.writeBlock(crypto, blockNo, blockData);
+  rfalNfcDevice *device = NULL;
+  rfalMf1CryptoState crypto = {};
+
+  if (!reacquireCard(expectedUid, &device)) {
+    return false;
+  }
+
+  if (!authenticateBlock(device, blockNo, &crypto)) {
+    return false;
+  }
+
+  const ReturnCode err = gMf1.writeBlock(&crypto, blockNo, blockData);
   printReturnCode("WRITE result", err);
-  return (err == ERR_NONE);
+  if (err == ERR_NONE) {
+    return true;
+  }
+
+  Serial.println("Write status was not ERR_NONE; re-reading block to check whether the card accepted it.");
+  delay(20);
+
+  uint8_t verifyBlock[RFAL_MF1_BLOCK_LEN] = {0};
+  if (!readBlockAndLog(expectedUid, blockNo, "Block after write status check", verifyBlock)) {
+    return false;
+  }
+
+  if (memcmp(verifyBlock, blockData, sizeof(verifyBlock)) != 0) {
+    Serial.println("Write status check mismatch.");
+    return false;
+  }
+
+  Serial.println("Write status check matched despite the non-ERR_NONE write status.");
+  return true;
+}
+
+void selectTestPattern(const uint8_t *originalBlock, uint8_t *testPattern)
+{
+  memcpy(testPattern, kPreferredTestBlock4, RFAL_MF1_BLOCK_LEN);
+  if (memcmp(originalBlock, testPattern, RFAL_MF1_BLOCK_LEN) == 0) {
+    RfalMf1Class::makeTestPattern(originalBlock, testPattern, RFAL_MF1_BLOCK_LEN);
+  }
 }
 
 void runMf1ReadWriteTest(rfalNfcDevice *device)
@@ -215,8 +362,7 @@ void runMf1ReadWriteTest(rfalNfcDevice *device)
   uint8_t testPattern[RFAL_MF1_BLOCK_LEN] = {0};
   uint8_t verifyBlock[RFAL_MF1_BLOCK_LEN] = {0};
   uint8_t restoreVerifyBlock[RFAL_MF1_BLOCK_LEN] = {0};
-  uint32_t cardNonce = 0U;
-  rfalMf1CryptoState crypto = {};
+  uint32_t expectedUid = 0U;
 
   printCardSummary(device);
 
@@ -225,56 +371,42 @@ void runMf1ReadWriteTest(rfalNfcDevice *device)
     return;
   }
 
-  const ReturnCode authErr = gMf1.authenticate(&crypto, device, kTestBlock, kDefaultKeyA, RFAL_MF1_AUTH_KEY_A, &cardNonce);
-  printReturnCode("AUTH result", authErr);
-  if (authErr != ERR_NONE) {
-    Serial.println("Authentication failed. Test aborted.");
+  if (!RfalMf1Class::getUid32(device, &expectedUid)) {
+    Serial.println("UID format is not supported by this S70 example. Test aborted.");
     return;
   }
 
-  uint8_t nonceBytes[4] = {
-    (uint8_t)(cardNonce >> 24),
-    (uint8_t)(cardNonce >> 16),
-    (uint8_t)(cardNonce >> 8),
-    (uint8_t)cardNonce
-  };
-  Serial.print("Card challenge Nt: ");
-  printBytes(nonceBytes, sizeof(nonceBytes));
-
-  if (!readBlockAndLog(&crypto, kTestBlock, "Original block 4", originalBlock)) {
+  if (!readBlockAndLog(expectedUid, kTestBlock, "Original block 4", originalBlock)) {
     Serial.println("Initial block read failed. Test aborted.");
     return;
   }
 
-  RfalMf1Class::makeTestPattern(kBaselineBlock4, testPattern, sizeof(testPattern));
-  if (memcmp(originalBlock, testPattern, sizeof(testPattern)) == 0) {
-    Serial.println("Detected a previous interrupted test pattern. Restoring baseline block first.");
-    if (!writeBlockAndLog(&crypto, kTestBlock, kBaselineBlock4, NULL, false)) {
-      Serial.println("Recovery restore failed. Manual follow-up may be required.");
-      return;
-    }
+  if (memcmp(originalBlock, kBaselineBlock4, sizeof(kBaselineBlock4)) == 0) {
+    Serial.println("Block already contains the built-in baseline pattern.");
+  }
 
-    if (!readBlockAndLog(&crypto, kTestBlock, "Block after recovery restore", restoreVerifyBlock)) {
-      Serial.println("Recovery verification failed. Manual follow-up may be required.");
-      return;
-    }
+  if (memcmp(originalBlock, kPreferredTestBlock4, sizeof(kPreferredTestBlock4)) == 0) {
+    Serial.println("Block already contains the preferred test pattern. Using an alternate pattern for this run.");
+  }
 
-    if (memcmp(restoreVerifyBlock, kBaselineBlock4, sizeof(restoreVerifyBlock)) != 0) {
-      Serial.println("Recovery restore verification mismatch. Manual follow-up may be required.");
-      return;
-    }
-
-    Serial.println("Recovery restore passed.");
+  if (!kEnableWriteTest) {
+    Serial.println("Write test is disabled by kEnableWriteTest=false. Set it to true in this sketch to write block 4.");
+    Serial.println("The read/auth path is complete; no card data was changed in this run.");
     return;
   }
 
-  RfalMf1Class::makeTestPattern(originalBlock, testPattern, sizeof(testPattern));
-  if (!writeBlockAndLog(&crypto, kTestBlock, testPattern, "Writing test pattern", true)) {
+  selectTestPattern(originalBlock, testPattern);
+  if (memcmp(originalBlock, testPattern, sizeof(testPattern)) == 0) {
+    Serial.println("Selected test pattern matches the current block. Test aborted to avoid a no-op write.");
+    return;
+  }
+
+  if (!writeBlockAndLog(expectedUid, kTestBlock, testPattern, "Writing test pattern", true)) {
     Serial.println("Test-pattern write failed. Restore not required.");
     return;
   }
 
-  if (!readBlockAndLog(&crypto, kTestBlock, "Block after write", verifyBlock)) {
+  if (!readBlockAndLog(expectedUid, kTestBlock, "Block after write", verifyBlock)) {
     Serial.println("Post-write read-back failed. Card may still contain the test pattern.");
     return;
   }
@@ -286,12 +418,12 @@ void runMf1ReadWriteTest(rfalNfcDevice *device)
 
   Serial.println("Post-write verification passed.");
 
-  if (!writeBlockAndLog(&crypto, kTestBlock, originalBlock, NULL, false)) {
+  if (!writeBlockAndLog(expectedUid, kTestBlock, originalBlock, NULL, false)) {
     Serial.println("Restore write failed. The test pattern may still be on the card.");
     return;
   }
 
-  if (!readBlockAndLog(&crypto, kTestBlock, "Block after restore", restoreVerifyBlock)) {
+  if (!readBlockAndLog(expectedUid, kTestBlock, "Block after restore", restoreVerifyBlock)) {
     Serial.println("Restore verification read failed. Manual follow-up may be required.");
     return;
   }
@@ -350,8 +482,9 @@ void setup()
   params.notifyCb = onNfcStateChange;
   params.totalDuration = 1000U;
   params.techs2Find = (uint16_t)RFAL_NFC_POLL_TECH_A;
+  gDiscoverParams = params;
 
-  if (gNfc.rfalNfcDiscover(&params) != ERR_NONE) {
+  if (gNfc.rfalNfcDiscover(&gDiscoverParams) != ERR_NONE) {
     Serial.println("rfalNfcDiscover() failed.");
   }
 }

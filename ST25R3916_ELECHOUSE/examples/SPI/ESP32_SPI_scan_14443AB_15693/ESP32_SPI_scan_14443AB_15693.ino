@@ -1,10 +1,10 @@
 /*
   Example: ESP32_SPI_scan_14443AB_15693
   Bus: SPI
-  Wiring: SCK=18, MISO=19, MOSI=23, SS=5, IRQ=4, LED=2 (optional)
+  Default wiring: ESP32 SCK=18/MISO=19/MOSI=23/SS=5; ESP32-S3 SCK=12/MISO=13/MOSI=11/SS=10; IRQ=4; LED=2 (optional)
   Cards: ISO14443A, ISO14443B, ISO15693
   Goal: Multi-protocol discovery loop for the current ESP32 SPI baseline.
-  Common failures: Using SPIClass(VSPI) on ESP32 core 3.x, wrong board FQBN, poor antenna coupling.
+  Common failures: Wrong SPI bus/board FQBN, wrong wiring, poor antenna coupling.
 */
 
 #include <Arduino.h>
@@ -17,14 +17,27 @@
 
 namespace {
 
-constexpr int kPinMosi = ST25R3916_DEFAULT_SPI_MOSI_PIN;
-constexpr int kPinMiso = ST25R3916_DEFAULT_SPI_MISO_PIN;
-constexpr int kPinSck = ST25R3916_DEFAULT_SPI_SCK_PIN;
-constexpr int kPinSs = ST25R3916_DEFAULT_SPI_SS_PIN;
-constexpr int kPinIrq = ST25R3916_DEFAULT_IRQ_PIN;
-constexpr int kPinLed = ST25R3916_DEFAULT_LED_PIN;
+#if defined(CONFIG_IDF_TARGET_ESP32S3) || defined(ARDUINO_ESP32S3_DEV)
+// ESP32-S3-N16R8 default SPI wiring. Edit these values to match your board.
+constexpr uint8_t kSpiBus = FSPI;
+constexpr int kPinSck = 12;
+constexpr int kPinMiso = 13;
+constexpr int kPinMosi = 11;
+constexpr int kPinSs = 10;
+constexpr int kPinIrq = 4;
+constexpr int kPinLed = 2;
+#else
+// Classic ESP32 default SPI wiring. Edit these values to match your board.
+constexpr uint8_t kSpiBus = VSPI;
+constexpr int kPinSck = 18;
+constexpr int kPinMiso = 19;
+constexpr int kPinMosi = 23;
+constexpr int kPinSs = 5;
+constexpr int kPinIrq = 4;
+constexpr int kPinLed = 2;
+#endif
 
-SPIClass gSpi(VSPI);
+SPIClass gSpi(kSpiBus);
 RfalRfST25R3916Class gReader(&gSpi, kPinSs, kPinIrq);
 RfalNfcClass gNfc(&gReader);
 

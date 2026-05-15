@@ -12,7 +12,7 @@
 - Reader stack: `ST25R3916` + `NFC-RFAL`
 - Bus: `SPI`
 
-### Default wiring
+### Classic ESP32 default wiring
 
 - `SCK` -> `GPIO18`
 - `MISO` -> `GPIO19`
@@ -20,6 +20,19 @@
 - `SS` -> `GPIO5`
 - `IRQ` -> `GPIO4`
 - `LED` -> `GPIO2` (optional)
+
+### ESP32-S3 bring-up wiring
+
+- Board: `ESP32-S3-N16R8`
+- Arduino target board: `esp32:esp32:esp32s3` (`ESP32S3 Dev Module`)
+- `SCK` -> `GPIO12`
+- `MISO` -> `GPIO13`
+- `MOSI` -> `GPIO11`
+- `SS` -> `GPIO10`
+- `IRQ` -> `GPIO4`
+- `LED` -> `GPIO2` (optional)
+- SPI bus: `FSPI`
+- Initial validation card: `MIFARE One S70 / MIFARE Classic 4K`
 
 ## Current SPI examples
 
@@ -39,7 +52,7 @@
 - Arduino CLI: `1.2.2`
 - Arduino target board: `ESP32 Dev Module`
 - Arduino core: `esp32:esp32 3.3.0-cn`
-- Arduino-ESP32 compatibility target: core `3.x` style `SPIClass(0)` constructor
+- Arduino-ESP32 compatibility target: core `3.x` style `SPIClass(...)` constructor
 - SPI clock default: `5 MHz`
 - IRQ mode: rising-edge interrupt on the `IRQ` pin
 
@@ -76,3 +89,48 @@
 - Original raw NDEF: `D1 01 0B 55 01 6F 6B 65 64 64 79 2E 63 6F 6D`
 - Test raw NDEF: `D1 01 12 54 02 65 6E 45 4C 45 43 48 4F 55 53 45 20 4E 44 45 46 20 31 00`
 - Write/read/restore cycle completed with `ERR_NONE` throughout.
+
+## ESP32-S3 validation snapshot
+
+- Date: `2026-05-15`
+- Board: `ESP32-S3-N16R8`
+- Initial upload port: `COM3` (`USB-SERIAL CH340`)
+- Arduino target: `esp32:esp32:esp32s3`
+- Board options used for validation: `FlashSize=16M`, `PSRAM=opi`, `USBMode=hwcdc`, `CDCOnBoot=default`, `UploadMode=default`, `FlashMode=qio`, `PartitionScheme=app3M_fat9M_16MB`
+- `ESP32_SPI_card_profile` compiled and uploaded successfully over COM3.
+- `ESP32_SPI_mf1_s70_read_write_test` compiled, uploaded, and completed a default-key block write/read/restore cycle on the same ESP32-S3 target.
+- Observed card type: `ISO14443A`
+- Observed UID: `3B 58 C0 38`
+- Observed ATQA: `02 00`
+- Observed SAK: `18`
+- Card interpretation: likely `MIFARE Classic 4K / MIFARE One S70` compatible.
+- NDEF detection result: `ERR_PROTO`, expected for this proprietary MIFARE Classic profile.
+- MF1 test block: `4`
+- MF1 original block: `00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00`
+- MF1 test pattern: `A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5`
+- MF1 write/read/restore cycle completed with `ERR_NONE` throughout.
+
+## ESP32-S3 ISO15693 validation snapshot
+
+- Date: `2026-05-15`
+- Board: `ESP32-S3-N16R8`
+- Upload port: `COM7` (`USB-SERIAL CH340`)
+- Arduino target: `esp32:esp32:esp32s3`
+- Board options used for validation: `FlashSize=16M`, `PSRAM=opi`, `USBMode=hwcdc`, `CDCOnBoot=default`, `UploadMode=default`, `FlashMode=qio`, `PartitionScheme=app3M_fat9M_16MB`
+- ESP32-S3 SPI examples compiled successfully: `ESP32_SPI_scan_14443AB_15693`, `ESP32_SPI_polling_hotplug`, `ESP32_SPI_card_profile`, `ESP32_SPI_icode_slix2_read_write_test`, `ESP32_SPI_ndef_write_read_restore`.
+- `ESP32_SPI_card_profile` compiled and uploaded successfully over COM7.
+- Observed card type: `ISO15693`
+- Observed UID: `50 0A 3F 10 53 01 04 E0`
+- NDEF state: `READWRITE`
+- NDEF area length: `104`
+- NDEF available space: `102`
+- Original raw NDEF: `D1 01 0B 55 01 6F 6B 65 64 64 79 2E 63 6F 6D`
+- `ESP32_SPI_icode_slix2_read_write_test` completed a single-block write/read/restore cycle.
+- ISO15693 block count and size: `28` blocks, `4` bytes per block
+- ISO15693 test block: `8`
+- ISO15693 original block `8`: `00 00 00 00`
+- ISO15693 test pattern: `5A 6B 7C 8D`
+- ISO15693 write/read/restore cycle completed with `ERR_NONE` throughout.
+- `ESP32_SPI_ndef_write_read_restore` completed a Type 5 NDEF write/read/restore cycle.
+- Test raw NDEF: `D1 01 12 54 02 65 6E 45 4C 45 43 48 4F 55 53 45 20 4E 44 45 46 20 31 00`
+- Type 5 NDEF write/read/restore cycle completed with `ERR_NONE` throughout.
