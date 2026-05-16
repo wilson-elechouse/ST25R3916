@@ -34,6 +34,20 @@
 - SPI bus: `FSPI`
 - Initial validation card: `MIFARE One S70 / MIFARE Classic 4K`
 
+### ESP32-C3 bring-up wiring
+
+- Board: `ESP32-C3` hardware using the official generic Arduino target
+- Arduino target board: `esp32:esp32:esp32c3` (`ESP32C3 Dev Module`)
+- `SCK` -> `GPIO2`
+- `MISO` -> `GPIO10`
+- `MOSI` -> `GPIO3`
+- `SS` -> `GPIO7`
+- `IRQ` -> `GPIO6`
+- `LED` -> `GPIO12` (optional)
+- SPI bus: `FSPI`
+- Board option used for validation: `FlashMode=dio`
+- Initial validation card: `NXP ICODE SLIX2 / ISO15693`
+
 ## Current SPI examples
 
 - `ESP32_SPI_scan_14443AB_15693`
@@ -51,7 +65,7 @@
 
 - Arduino CLI: `1.2.2`
 - Arduino target board: `ESP32 Dev Module`
-- Arduino core: `esp32:esp32 3.3.0-cn`
+- Arduino core: `esp32:esp32 3.3.8`
 - Arduino-ESP32 compatibility target: core `3.x` style `SPIClass(...)` constructor
 - SPI clock default: `5 MHz`
 - IRQ mode: rising-edge interrupt on the `IRQ` pin
@@ -134,3 +148,29 @@
 - `ESP32_SPI_ndef_write_read_restore` completed a Type 5 NDEF write/read/restore cycle.
 - Test raw NDEF: `D1 01 12 54 02 65 6E 45 4C 45 43 48 4F 55 53 45 20 4E 44 45 46 20 31 00`
 - Type 5 NDEF write/read/restore cycle completed with `ERR_NONE` throughout.
+
+## ESP32-C3 ISO15693 validation snapshot
+
+- Date: `2026-05-16`
+- Board: `ESP32-C3` hardware using the official generic Arduino target
+- Upload port: `COM8`
+- Arduino target: `esp32:esp32:esp32c3`
+- Arduino-ESP32 core: `3.3.8`
+- Board option used for validation: `FlashMode=dio`
+- Reader board used in this validation run: ST25R3916. ST25R3916B remains a supported ST25R3916-family target, but it was not the board attached for this run.
+- SPI wiring: `SCK=GPIO2`, `MISO=GPIO10`, `MOSI=GPIO3`, `SS=GPIO7`, `IRQ=GPIO6`
+- Optional LED default for C3 examples: `GPIO12`
+- `ESP32_SPI_card_profile`: detected `ISO15693`, UID `FA F3 E3 06 09 01 04 E0`, RF interface `RF`, NDEF state `READWRITE`
+- NDEF area length: `312`
+- NDEF available space: `310`
+- Original raw NDEF: `D1 01 0B 55 01 6F 6B 65 64 64 79 2E 63 6F 6D`
+- `ESP32_SPI_scan_14443AB_15693`: repeatedly detected `ISO15693 ID: FA F3 E3 06 09 01 04 E0`
+- `ESP32_SPI_icode_slix2_read_write_test`: completed a single-block write/read/restore cycle
+- ISO15693 system info: manufacturer `NXP`, IC reference `0x01`, `80` blocks, `4` bytes per block
+- ISO15693 test block: `8`
+- ISO15693 original block `8`: `00 00 00 00`
+- ISO15693 test pattern: `5A 6B 7C 8D`
+- ISO15693 block restore verification: passed
+- `ESP32_SPI_ndef_write_read_restore`: completed a Type 5 NDEF write/read/restore cycle
+- Test raw NDEF: `D1 01 12 54 02 65 6E 45 4C 45 43 48 4F 55 53 45 20 4E 44 45 46 20 31 00`
+- Type 5 NDEF restore verification: passed; original 15-byte NDEF message was restored

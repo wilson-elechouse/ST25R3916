@@ -13,7 +13,7 @@ Recommended ELECHOUSE product:
 ## Scope
 
 - Supported focus: classic `ESP32 Dev Module`, `ESP32-S3`, and `ESP32-C3` example bring-up
-- Primary transport: `SPI`
+- Primary transport: `SPI` (ESP32-C3 hardware-validated for `ISO15693` card profiling, A/B/V scanning, ICODE block write/read/restore, and `ISO15693 / Type 5` NDEF write/read/restore)
 - Bring-up transport: `I2C` (first-pass ESP32 hardware-validated for chip probe, `ISO14443A`, S70 read/auth/dump diagnostics, `ISO15693` `ICODE SLIX2` read/write/restore, ESP32-C3 `ISO15693 / Type 5` NDEF write/read/restore, and `ISO14443B / Type 4B` NDEF write/read/restore)
 - ESP32-C3 target used for validation: `esp32:esp32:esp32c3` (`ESP32C3 Dev Module`) on Arduino-ESP32 core `3.3.8`, with `FlashMode=dio`
 
@@ -92,6 +92,7 @@ I2C examples under `examples/I2C/`:
 - `ESP32_SPI_iso14443b_ndef_write_test` is hardware-validated on `ESP32 Dev Module` with a writable `ISO14443B / Type 4B` card.
 - `ESP32_SPI_icode_slix2_read_write_test` is hardware-validated on `ESP32 Dev Module` with a current `NXP ICODE` `ISO15693` card.
 - `ESP32_SPI_ndef_write_read_restore` is hardware-validated on `ESP32 Dev Module` with a writable `ISO14443A / Type 2` card.
+- `ESP32_SPI_card_profile`, `ESP32_SPI_scan_14443AB_15693`, `ESP32_SPI_icode_slix2_read_write_test`, and `ESP32_SPI_ndef_write_read_restore` are also hardware-validated on `ESP32-C3` with an ST25R3916 SPI board and an `NXP ICODE SLIX2` / `ISO15693` card.
 - `ESP32_I2C_probe_chip`, `ESP32_I2C_scan_14443A`, `ESP32_I2C_scan_14443AB_15693`, `ESP32_I2C_t2t_write_read_test` (safe rejection path on a `MIFARE Classic` card), `ESP32_I2C_mf1_s70_read_write_test` in default read/auth mode, `ESP32_I2C_mf1_s70_sector_range_dump`, `ESP32_I2C_mf1_s70_serial_tool`, `ESP32_I2C_icode_slix2_read_write_test`, and `ESP32_I2C_iso14443b_ndef_write_test` are hardware-validated on `ESP32 Dev Module`.
 - `ESP32_I2C_probe_chip` and `ESP32_I2C_mf1_s70_read_write_test` read/auth mode are also hardware-validated on `ESP32-C3` with an ST25R3916 I2C board and an S70 card.
 - `ESP32_I2C_card_profile`, `ESP32_I2C_scan_14443AB_15693`, `ESP32_I2C_icode_slix2_read_write_test`, and `ESP32_I2C_ndef_write_read_restore` are also hardware-validated on `ESP32-C3` with the same ST25R3916 I2C board and an `NXP ICODE SLIX2` / `ISO15693` card.

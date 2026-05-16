@@ -1,7 +1,7 @@
 # ST25R3916 / ST25R3916B for ESP32
 
 This repository is an ESP32-focused fork of the ST25R3916/ST25R3916B + NFC-RFAL Arduino libraries.
-The current maintenance targets are classic `ESP32 Dev Module`, `ESP32-S3`, and `ESP32-C3` example bring-up. I2C bring-up is also validated in this branch for chip probe, `ISO14443A` scanning, S70 read/auth/dump diagnostics, dedicated `ISO15693` block read/write/restore on `NXP ICODE SLIX2`, `ISO15693 / Type 5` NDEF write/read/restore on ESP32-C3, and `ISO14443B / Type 4B` NDEF write/read/restore at `100 kHz`.
+The current maintenance targets are classic `ESP32 Dev Module`, `ESP32-S3`, and `ESP32-C3` example bring-up. SPI is validated on ESP32-C3 for `ISO15693` profile, A/B/V scanning, ICODE block write/read/restore, and `ISO15693 / Type 5` NDEF write/read/restore. I2C bring-up is also validated in this branch for chip probe, `ISO14443A` scanning, S70 read/auth/dump diagnostics, dedicated `ISO15693` block read/write/restore on `NXP ICODE SLIX2`, `ISO15693 / Type 5` NDEF write/read/restore on ESP32-C3, and `ISO14443B / Type 4B` NDEF write/read/restore at `100 kHz`.
 
 `ST25R3916_ELECHOUSE` examples still depend on the sibling `NFC-RFAL` library.
 
@@ -80,7 +80,7 @@ ESP32-C3 default:
 - `ESP32_SPI_scan_14443A_led`
   - ISO14443A-only continuous polling test. Prints the UID repeatedly while a card is present and blinks `GPIO2` / D2.
 - `ESP32_SPI_scan_14443AB_15693`
-  - Multi-protocol discovery baseline for A/B/V.
+  - Multi-protocol discovery baseline for A/B/V. Rerun on ESP32-C3 with an `ISO15693` card.
 - `ESP32_SPI_polling_hotplug`
   - Continuous polling with insert/remove reporting.
 - `ESP32_SPI_card_profile`
@@ -88,9 +88,9 @@ ESP32-C3 default:
 - `ESP32_SPI_iso14443b_ndef_write_test`
   - Safe `ISO14443-4B / Type 4B` NDEF write/read/restore test over SPI, hardware-validated on a writable `ISO14443B` card.
 - `ESP32_SPI_icode_slix2_read_write_test`
-  - Safe `ISO15693 / NFC-V` single-block write/read/restore test over SPI, hardware-validated on a current `NXP ICODE` card.
+  - Safe `ISO15693 / NFC-V` single-block write/read/restore test over SPI, hardware-validated on a current `NXP ICODE` card, including ESP32-C3.
 - `ESP32_SPI_ndef_write_read_restore`
-  - Generic NDEF write/read/restore test over SPI, hardware-validated on a writable `ISO14443A / Type 2` card.
+  - Generic NDEF write/read/restore test over SPI, hardware-validated on a writable `ISO14443A / Type 2` card and on ESP32-C3 with the current `ISO15693 / Type 5` card.
 - `ESP32_SPI_mf1_s70_read_write_test`
   - Safe MIFARE Classic S70 block write/read/restore test with default key flow.
 - `ESP32_SPI_mf1_s70_sector_range_dump`
