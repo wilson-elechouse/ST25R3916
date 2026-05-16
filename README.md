@@ -1,7 +1,7 @@
 # ST25R3916 / ST25R3916B for ESP32
 
 This repository is an ESP32-focused fork of the ST25R3916/ST25R3916B + NFC-RFAL Arduino libraries.
-The current maintenance targets are classic `ESP32 Dev Module`, `ESP32-S3`, and `ESP32-C3` example bring-up. SPI is validated on ESP32-C3 for `ISO15693` profile, A/B/V scanning, ICODE block write/read/restore, and `ISO15693 / Type 5` NDEF write/read/restore. I2C bring-up is also validated in this branch for chip probe, `ISO14443A` scanning, S70 read/auth/dump diagnostics, dedicated `ISO15693` block read/write/restore on `NXP ICODE SLIX2`, `ISO15693 / Type 5` NDEF write/read/restore on ESP32-C3, and `ISO14443B / Type 4B` NDEF write/read/restore at `100 kHz`.
+The current maintenance targets are classic `ESP32 Dev Module`, `ESP32-S3`, and `ESP32-C3` example bring-up. SPI is validated on ESP32-C3 for `ISO15693` profile, A/B/V scanning, ICODE block write/read/restore, `ISO15693 / Type 5` NDEF write/read/restore, and MIFARE Classic S70 read/write/restore plus sector dump. I2C bring-up is also validated in this branch for chip probe, `ISO14443A` scanning, S70 read/auth/dump diagnostics, dedicated `ISO15693` block read/write/restore on `NXP ICODE SLIX2`, `ISO15693 / Type 5` NDEF write/read/restore on ESP32-C3, and `ISO14443B / Type 4B` NDEF write/read/restore at `100 kHz`.
 
 `ST25R3916_ELECHOUSE` examples still depend on the sibling `NFC-RFAL` library.
 
@@ -92,9 +92,9 @@ ESP32-C3 default:
 - `ESP32_SPI_ndef_write_read_restore`
   - Generic NDEF write/read/restore test over SPI, hardware-validated on a writable `ISO14443A / Type 2` card and on ESP32-C3 with the current `ISO15693 / Type 5` card.
 - `ESP32_SPI_mf1_s70_read_write_test`
-  - Safe MIFARE Classic S70 block write/read/restore test with default key flow.
+  - Safe MIFARE Classic S70 block write/read/restore test with default key flow, hardware-validated on ESP32-C3.
 - `ESP32_SPI_mf1_s70_sector_range_dump`
-  - Read-only dump across a sector range with trailer skipping.
+  - Read-only dump across a sector range with trailer skipping, hardware-validated on ESP32-C3.
 - `ESP32_SPI_mf1_s70_serial_tool`
   - Interactive serial tool for read-only MF1 block/sector dump and export.
   Path: `ST25R3916_ELECHOUSE/examples/SPI/`

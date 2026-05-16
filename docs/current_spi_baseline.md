@@ -46,7 +46,7 @@
 - `LED` -> `GPIO12` (optional)
 - SPI bus: `FSPI`
 - Board option used for validation: `FlashMode=dio`
-- Initial validation card: `NXP ICODE SLIX2 / ISO15693`
+- Validation cards: `NXP ICODE SLIX2 / ISO15693`, `MIFARE One S70 / MIFARE Classic 4K`
 
 ## Current SPI examples
 
@@ -174,3 +174,26 @@
 - `ESP32_SPI_ndef_write_read_restore`: completed a Type 5 NDEF write/read/restore cycle
 - Test raw NDEF: `D1 01 12 54 02 65 6E 45 4C 45 43 48 4F 55 53 45 20 4E 44 45 46 20 31 00`
 - Type 5 NDEF restore verification: passed; original 15-byte NDEF message was restored
+
+## ESP32-C3 S70 validation snapshot
+
+- Date: `2026-05-16`
+- Board: `ESP32-C3` hardware using the official generic Arduino target
+- Upload port: `COM8`
+- Arduino target: `esp32:esp32:esp32c3`
+- Arduino-ESP32 core: `3.3.8`
+- Board option used for validation: `FlashMode=dio`
+- Reader board used in this validation run: ST25R3916. ST25R3916B remains a supported ST25R3916-family target, but it was not the board attached for this run.
+- SPI wiring: `SCK=GPIO2`, `MISO=GPIO10`, `MOSI=GPIO3`, `SS=GPIO7`, `IRQ=GPIO6`
+- Optional LED default for C3 examples: `GPIO12`
+- `ESP32_SPI_card_profile`: detected `ISO14443A`, UID `3B 58 C0 38`, ATQA `02 00`, SAK `18`
+- Card interpretation: likely `MIFARE Classic 4K / MIFARE One S70` compatible
+- NDEF detection result: `ERR_PROTO`, expected for this proprietary MIFARE Classic card type
+- `ESP32_SPI_mf1_s70_read_write_test`: default Key A authentication passed on block `4`
+- Original block `4`: `00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00`
+- MF1 test pattern: `A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5 A5`
+- MF1 block write/read/restore cycle: passed with `ERR_NONE` throughout
+- Block `4` after restore: `00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00`
+- `ESP32_SPI_mf1_s70_sector_range_dump`: sectors `1-2` authenticated and read successfully with default Key A
+- Sector dump data blocks read successfully: `4`, `5`, `6`, `8`, `9`, `10`
+- Trailer blocks skipped as intended: `7`, `11`
