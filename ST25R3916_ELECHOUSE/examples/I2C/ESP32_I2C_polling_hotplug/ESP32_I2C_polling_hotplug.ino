@@ -1,7 +1,7 @@
 /*
   Example: ESP32_I2C_polling_hotplug
   Bus: I2C
-  Default wiring: ESP32 SDA=21/SCL=22; ESP32-S3 SDA=8/SCL=9; IRQ=4; LED=2 (optional)
+  Default wiring: ESP32 SDA=21/SCL=22; ESP32-S3 SDA=8/SCL=9; ESP32-C3 SDA=4/SCL=5; IRQ=4 (ESP32/S3) or GPIO6 (C3); LED=2 (ESP32/S3) or GPIO12 (C3, optional)
   Cards: ISO14443A first-pass validated, ISO15693 can be enabled on the same loop
   Goal: Show insert/remove behaviour during continuous polling on ESP32 over I2C.
   Common failures: missing pull-ups, wrong SDA/SCL pins, noisy IRQ line, assuming 400kHz is stable too early.
@@ -23,6 +23,13 @@ constexpr int kPinSda = 8;
 constexpr int kPinScl = 9;
 constexpr int kPinIrq = 4;
 constexpr int kPinLed = 2;
+constexpr uint32_t kI2cClockHz = 100000UL;
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(ARDUINO_ESP32C3_DEV)
+// ESP32-C3 default I2C wiring. Edit these values to match your board.
+constexpr int kPinSda = 4;
+constexpr int kPinScl = 5;
+constexpr int kPinIrq = 6;
+constexpr int kPinLed = 12;
 constexpr uint32_t kI2cClockHz = 100000UL;
 #else
 // Classic ESP32 default I2C wiring. Edit these values to match your board.
@@ -54,6 +61,19 @@ uint8_t probeI2cAddress()
 {
   Wire.beginTransmission(kI2cAddress);
   return (uint8_t)Wire.endTransmission(true);
+}
+uint8_t waitForI2cAddress(unsigned long timeoutMs)
+{
+  const unsigned long start = millis();
+  uint8_t status = 4U;
+  do {
+    status = probeI2cAddress();
+    if (status == 0U) {
+      return status;
+    }
+    delay(20);
+  } while ((millis() - start) < timeoutMs);
+  return status;
 }
 
 const char *deviceTypeToString(rfalNfcDevType type)
@@ -141,7 +161,7 @@ void setup()
   Wire.begin(kPinSda, kPinScl, kI2cClockHz);
   delay(20);
 
-  const uint8_t probe = probeI2cAddress();
+  const uint8_t probe = waitForI2cAddress(1500UL);
   Serial.print("I2C ACK probe (0x50): ");
   Serial.println((int)probe);
   if (probe != 0U) {

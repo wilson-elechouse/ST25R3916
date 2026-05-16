@@ -1,7 +1,7 @@
-# ST25R3916 for ESP32
+# ST25R3916 / ST25R3916B for ESP32
 
-This repository is an ESP32-focused fork of the ST25R3916 + NFC-RFAL Arduino libraries.
-The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C bring-up is also validated in this branch for chip probe, `ISO14443A` scanning, S70 read/auth/dump diagnostics, dedicated `ISO15693` block read/write/restore on `NXP ICODE SLIX2`, and `ISO14443B / Type 4B` NDEF write/read/restore at `100 kHz`.
+This repository is an ESP32-focused fork of the ST25R3916/ST25R3916B + NFC-RFAL Arduino libraries.
+The current maintenance targets are classic `ESP32 Dev Module`, `ESP32-S3`, and `ESP32-C3` example bring-up. I2C bring-up is also validated in this branch for chip probe, `ISO14443A` scanning, S70 read/auth/dump diagnostics, dedicated `ISO15693` block read/write/restore on `NXP ICODE SLIX2`, `ISO15693 / Type 5` NDEF write/read/restore on ESP32-C3, and `ISO14443B / Type 4B` NDEF write/read/restore at `100 kHz`.
 
 `ST25R3916_ELECHOUSE` examples still depend on the sibling `NFC-RFAL` library.
 
@@ -9,6 +9,7 @@ The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C bring-up is
 
 - Recommended module for new ESP32 NFC/RFID projects: [ELECHOUSE ST25R3916B NFC Module](https://www.elechouse.com/product/st25r3916b-nfc-module/).
 - Choose the ST25R3916B module for new designs that need a newer ST25R3916-family reader IC, ISO 14443A/B, ISO 15693, FeliCa, NFC Forum tag support, and practical compatibility with this ELECHOUSE ST25R3916 software stack.
+- Existing ST25R3916 boards remain supported. The driver accepts both ST25R3916 and ST25R3916B chip identities during initialization; validation notes below list the exact reader IC used in each hardware run.
 - For first bring-up with the ST25R3916B module, use the `SPI` examples first; SPI is the stock and most regression-protected path in this repository.
 - The `I2C` examples are also available after configuring the board for I2C mode and are maintained as an additional validated path for custom or alternate hardware setups.
 
@@ -43,6 +44,7 @@ Install both library folders into your Arduino libraries path:
 Use `esp32:esp32:esp32` (`ESP32 Dev Module`) as the classic ESP32 target board.
 For `ESP32-S3-N16R8`, use `esp32:esp32:esp32s3` (`ESP32S3 Dev Module`) with `FlashSize=16M` and `PSRAM=opi`.
 On CH340-based ESP32-S3 boards, keep `CDCOnBoot=default` so `Serial` logs stay on the CH340 COM port.
+For ESP32-C3 boards, use the official generic target `esp32:esp32:esp32c3` (`ESP32C3 Dev Module`). This repository was checked with Arduino-ESP32 core `3.3.8`; the validated C3 board required `FlashMode=dio`.
 
 ### Default SPI wiring
 
@@ -63,6 +65,15 @@ ESP32-S3 default:
 - `SS` -> `GPIO10`
 - `IRQ` -> `GPIO4`
 - `LED` -> `GPIO2` (optional status LED)
+
+ESP32-C3 default:
+
+- `SCK` -> `GPIO2`
+- `MISO` -> `GPIO10`
+- `MOSI` -> `GPIO3`
+- `SS` -> `GPIO7`
+- `IRQ` -> `GPIO6`
+- `LED` -> `GPIO12` (optional status LED)
 
 ### Current SPI examples
 
@@ -90,10 +101,28 @@ ESP32-S3 default:
 
 ### Default I2C wiring
 
+Classic ESP32 default:
+
 - `SDA` -> `GPIO21`
 - `SCL` -> `GPIO22`
 - `IRQ` -> `GPIO4`
 - `LED` -> `GPIO2` (optional status LED)
+- I2C clock: `100 kHz` default bring-up target
+
+ESP32-S3 default:
+
+- `SDA` -> `GPIO8`
+- `SCL` -> `GPIO9`
+- `IRQ` -> `GPIO4`
+- `LED` -> `GPIO2` (optional status LED)
+- I2C clock: `100 kHz` default bring-up target
+
+ESP32-C3 default:
+
+- `SDA` -> `GPIO4`
+- `SCL` -> `GPIO5`
+- `IRQ` -> `GPIO6`
+- `LED` -> `GPIO12` (optional status LED)
 - I2C clock: `100 kHz` default bring-up target
 
 ### Current I2C bring-up examples
@@ -103,13 +132,13 @@ ESP32-S3 default:
 - `ESP32_I2C_scan_14443A`
   - First end-to-end I2C card detection example. Hardware-validated with one `ISO14443A` card.
 - `ESP32_I2C_scan_14443AB_15693`
-  - Multi-protocol I2C discovery baseline for A/B/V. Hardware-validated with the current `ISO14443A` card.
+  - Multi-protocol I2C discovery baseline for A/B/V. Hardware-validated with the current `ISO14443A` card and rerun on ESP32-C3 with an `ISO15693` card.
 - `ESP32_I2C_polling_hotplug`
   - Continuous I2C polling with insert/remove reporting. Intended to replace repeated UID spam during long-running scan demos.
 - `ESP32_I2C_t2t_write_read_test`
   - Safe raw Type 2 Tag page write/read/restore test over I2C. Also rejects non-T2T cards such as `MIFARE Classic`.
 - `ESP32_I2C_mf1_s70_read_write_test`
-  - MIFARE Classic S70 block read/auth test over I2C with default Key A. The write portion is guarded by `kEnableWriteTest=false`; set it to `true` only on a sacrificial card/block. The sketch uses `400 kHz` I2C when write testing is deliberately enabled.
+  - MIFARE Classic S70 block read/auth test over I2C with default Key A. The write portion is guarded by `kEnableWriteTest=false`; set it to `true` only on a sacrificial card/block. ESP32-C3 defaults to `100 kHz`; raise `kI2cClockHz` manually only after validating the module and wiring at Fast-mode.
 - `ESP32_I2C_mf1_s70_sector_range_dump`
   - Read-only dump across a MIFARE Classic sector range over I2C with trailer skipping.
 - `ESP32_I2C_mf1_s70_serial_tool`
@@ -117,9 +146,9 @@ ESP32-S3 default:
 - `ESP32_I2C_card_profile`
   - One-shot card profiling for protocol, `ISO-DEP`, and NDEF visibility over I2C.
 - `ESP32_I2C_icode_slix2_read_write_test`
-  - Safe ISO15693 single-block write/read/restore test over I2C, hardware-validated on `NXP ICODE SLIX2`.
+  - Safe ISO15693 single-block write/read/restore test over I2C, hardware-validated on `NXP ICODE SLIX2`, including ESP32-C3 at `100 kHz`.
 - `ESP32_I2C_ndef_write_read_restore`
-  - Generic NDEF write/read/restore test over I2C for standard writable `Type 2 / Type 4 / Type 5` cards.
+  - Generic NDEF write/read/restore test over I2C for standard writable `Type 2 / Type 4 / Type 5` cards. ESP32-C3 is validated with the current `ISO15693 / Type 5` card.
 - `ESP32_I2C_iso14443b_ndef_write_test`
   - Safe `ISO14443-4B / Type 4B` NDEF write/read/restore test over I2C, hardware-validated on a writable `ISO14443B` card.
   Path: `ST25R3916_ELECHOUSE/examples/I2C/`

@@ -1,7 +1,7 @@
 /*
   Example: ESP32_SPI_icode_slix2_read_write_test
   Bus: SPI
-  Default wiring: ESP32 SCK=18/MISO=19/MOSI=23/SS=5; ESP32-S3 SCK=12/MISO=13/MOSI=11/SS=10; IRQ=4; LED=2 (optional)
+  Default wiring: ESP32 SCK=18/MISO=19/MOSI=23/SS=5; ESP32-S3 SCK=12/MISO=13/MOSI=11/SS=10; ESP32-C3 SCK=2/MISO=10/MOSI=3/SS=7; IRQ=4 (ESP32/S3) or GPIO6 (C3); LED=2 (ESP32/S3) or GPIO12 (C3, optional)
   Target card: ISO15693 / NFC-V, validated on NXP ICODE SLIX2
 
   Usage:
@@ -54,6 +54,15 @@ constexpr int kPinMosi = 11;
 constexpr int kPinSs = 10;
 constexpr int kPinIrq = 4;
 constexpr int kPinLed = 2;
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(ARDUINO_ESP32C3_DEV)
+// ESP32-C3 default SPI wiring. Edit these values to match your board.
+constexpr uint8_t kSpiBus = FSPI;
+constexpr int kPinSck = 2;
+constexpr int kPinMiso = 10;
+constexpr int kPinMosi = 3;
+constexpr int kPinSs = 7;
+constexpr int kPinIrq = 6;
+constexpr int kPinLed = 12;
 #else
 // Classic ESP32 default SPI wiring. Edit these values to match your board.
 constexpr uint8_t kSpiBus = VSPI;

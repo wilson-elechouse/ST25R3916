@@ -1,7 +1,7 @@
 /*
   Example: ESP32_I2C_mf1_s70_read_write_test
   Bus: I2C
-  Default wiring: ESP32 SDA=21/SCL=22; ESP32-S3 SDA=8/SCL=9; IRQ=4; LED=2 (optional)
+  Default wiring: ESP32 SDA=21/SCL=22; ESP32-S3 SDA=8/SCL=9; ESP32-C3 SDA=4/SCL=5; IRQ=4 (ESP32/S3) or GPIO6 (C3); LED=2 (ESP32/S3) or GPIO12 (C3, optional)
   Target card: MIFARE One S70 / MIFARE Classic 4K
 
   Test flow:
@@ -40,6 +40,14 @@ constexpr int kPinIrq = 4;
 constexpr int kPinLed = 2;
 // MF1 write needs a fast I2C bus so the data frame follows the card ACK quickly.
 constexpr uint32_t kI2cClockHz = 400000UL;
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(ARDUINO_ESP32C3_DEV)
+// ESP32-C3 default I2C wiring. Edit these values to match your board.
+constexpr int kPinSda = 4;
+constexpr int kPinScl = 5;
+constexpr int kPinIrq = 6;
+constexpr int kPinLed = 12;
+// Keep C3 conservative by default; raise to 400000UL only after your I2C wiring/module is validated at Fast-mode.
+constexpr uint32_t kI2cClockHz = 100000UL;
 #else
 // Classic ESP32 default I2C wiring. Edit these values to match your board.
 constexpr int kPinSda = 21;
@@ -85,6 +93,20 @@ uint8_t probeI2cAddress()
 {
   Wire.beginTransmission(kI2cAddress);
   return (uint8_t)Wire.endTransmission(true);
+}
+
+uint8_t waitForI2cAddress(unsigned long timeoutMs)
+{
+  const unsigned long start = millis();
+  uint8_t status = 4U;
+  do {
+    status = probeI2cAddress();
+    if (status == 0U) {
+      return status;
+    }
+    delay(20);
+  } while ((millis() - start) < timeoutMs);
+  return status;
 }
 
 const char *returnCodeToString(ReturnCode code)
@@ -461,7 +483,7 @@ void setup()
   Wire.begin(kPinSda, kPinScl, kI2cClockHz);
   delay(20);
 
-  const uint8_t probe = probeI2cAddress();
+  const uint8_t probe = waitForI2cAddress(1500UL);
   Serial.print("I2C ACK probe (0x50): ");
   Serial.println((int)probe);
   if (probe != 0U) {

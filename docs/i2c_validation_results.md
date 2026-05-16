@@ -3,7 +3,7 @@
 ## Current State
 
 I2C work in this repository has now reached first-pass hardware validation for
-ESP32 + ST25R3916 basic bring-up, `ISO14443A` scanning, and dedicated
+ESP32 + ST25R3916-family basic bring-up, `ISO14443A` scanning, and dedicated
 `ISO15693` single-block read/write/restore on `NXP ICODE SLIX2`, plus
 `ISO14443B / Type 4B` NDEF write/read/restore. The SPI-only example gap has
 also now been closed on the I2C side with matching `scan`, `T2T`, and `MF1`
@@ -193,6 +193,36 @@ The current I2C examples compile for:
 - `ESP32_I2C_mf1_s70_read_write_test`: now defaults to read/auth only with `kEnableWriteTest=false`
 - optional write-test finding: at `100 kHz`, MF1 data-block writes did not reliably complete; at `400 kHz`, a non-zero block write and readback passed, but restore status was not reliable (`ERR_TIMEOUT` / `ERR_PROTO` even when a later read showed the restore had landed)
 
+## ESP32-C3 I2C Validation
+
+- Date: `2026-05-16`
+- Board: `ESP32-C3` hardware using the official generic Arduino target
+- Upload port: `COM8`
+- Arduino target: `esp32:esp32:esp32c3` (`ESP32C3 Dev Module`)
+- Arduino-ESP32 core: `3.3.8`
+- Board option used for validation: `FlashMode=dio`
+- Reader board used in this C3 validation run: ST25R3916. ST25R3916B remains a supported ST25R3916-family target, but it was not the board attached for this run.
+- I2C wiring: `SDA=GPIO4`, `SCL=GPIO5`, `IRQ=GPIO6`
+- Optional LED default for C3 examples: `GPIO12`
+- I2C clock: `100 kHz`
+- `ESP32_I2C_probe_chip`: ACK scan found `0x50`, `IC_IDENTITY=0x2A`, chip type `ST25R3916`, revision `2`, `rfalInitialize()=ERR_NONE`. The probe sketch also reports `ST25R3916B` when the B variant is attached.
+- S70 validation card: UID `3B 58 C0 38`, ATQA `02 00`, SAK `18`
+- `ESP32_I2C_mf1_s70_read_write_test`: default Key A authentication passed, block `4` read passed, original block `4` was `00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00`
+- `ESP32_I2C_mf1_s70_read_write_test` remained in safe read/auth mode with `kEnableWriteTest=false`; no card data was changed
+- The C3 S70 sketch now waits briefly for the ST25R3916 I2C address to ACK during startup. A single immediate probe could NACK before the reader board was ready after MCU reset.
+- ISO15693 validation card: `NXP ICODE SLIX2`, UID `FA F3 E3 06 09 01 04 E0`
+- `ESP32_I2C_card_profile`: detected `ISO15693`, RF interface `RF`, NDEF state `READWRITE`, NDEF message length `15`, NDEF area length `312`, NDEF available space `310`
+- Original ISO15693 raw NDEF: `D1 01 0B 55 01 6F 6B 65 64 64 79 2E 63 6F 6D`
+- `ESP32_I2C_scan_14443AB_15693`: repeatedly detected `ISO15693 ID: FA F3 E3 06 09 01 04 E0`
+- `ESP32_I2C_icode_slix2_read_write_test`: system info passed, manufacturer `NXP`, IC reference `0x01`, memory geometry `80` blocks, `4` bytes per block
+- ISO15693 selected test block: `8`
+- ISO15693 original block `8`: `00 00 00 00`
+- ISO15693 test pattern: `5A 6B 7C 8D`
+- ISO15693 block write/read/restore cycle: passed
+- `ESP32_I2C_ndef_write_read_restore`: completed a Type 5 NDEF write/read/restore cycle on the same ISO15693 card
+- Type 5 test raw NDEF: `D1 01 12 54 02 65 6E 45 4C 45 43 48 4F 55 53 45 20 4E 44 45 46 20 31 00`
+- Type 5 NDEF restore verification: passed; original 15-byte NDEF message was restored
+
 ## Known Limits
 
 - `ESP32_I2C_scan_14443A` and `ESP32_I2C_scan_14443AB_15693` intentionally
@@ -200,17 +230,21 @@ The current I2C examples compile for:
 - `ESP32_I2C_polling_hotplug` is the preferred long-running demo when insert/remove
   behaviour matters
 - `ESP32_I2C_mf1_s70_read_write_test` defaults to read/auth only on S70. Set
-  `kEnableWriteTest=true` manually only on a sacrificial card/block. The S70 write
-  path needs `400 kHz` I2C and still has unreliable final write status reporting on
-  the current default-key card.
+  `kEnableWriteTest=true` manually only on a sacrificial card/block. On the current
+  ESP32-S3 setup, the S70 write path needed `400 kHz` I2C and still had unreliable
+  final write status reporting. On the current ESP32-C3 + ST25R3916 I2C setup,
+  `100 kHz` is the validated default for read/auth only; Fast-mode write testing
+  remains unvalidated.
 - `ESP32_I2C_icode_slix2_read_write_test` is validated only for the current
-  `NXP ICODE SLIX2` card and safe data block `8`
+  `NXP ICODE SLIX2` card and safe data block `8`; this path is now validated on
+  both the classic ESP32 I2C setup and the ESP32-C3 I2C setup listed above
 - `ESP32_I2C_ndef_write_read_restore` is validated in this pass on the current
-  writable `ISO14443A / Type 2` NDEF card
+  writable `ISO14443A / Type 2` NDEF card and on the ESP32-C3 `ISO15693 / Type 5`
+  NDEF card listed above
 - `ESP32_I2C_iso14443b_ndef_write_test` is validated only for the current writable
   `ISO14443B / Type 4B` NDEF card
-- the multi-tech `ESP32_I2C_scan_14443AB_15693` sketch has only been rerun in this pass
-  with the current `ISO14443A` card; a fresh `ISO15693` recheck remains optional
+- the multi-tech `ESP32_I2C_scan_14443AB_15693` sketch has been rerun on ESP32-C3
+  with the current `ISO15693` card
 - I2C support should still be treated as first-pass ESP32 support, not broad
   cross-board closure
 
@@ -218,4 +252,4 @@ The current I2C examples compile for:
 
 The repository can now claim:
 
-`ESP32 I2C bring-up, ISO14443A scanning, direct A/B/V scanning, hotplug polling, MF1 S70 read/auth/dump diagnostics, ISO15693 ICODE SLIX2 single-block write/read/restore, ISO14443B / Type 4B NDEF write/read/restore, and generic NDEF write/read/restore on a writable Type 2 card are working at 100 kHz on ESP32 Dev Module for the validated hardware setup. The MF1 S70 write test is now guarded by kEnableWriteTest and requires the faster 400 kHz I2C setting when deliberately enabled.`
+`ESP32 I2C bring-up, ISO14443A scanning, direct A/B/V scanning, hotplug polling, MF1 S70 read/auth/dump diagnostics, ISO15693 ICODE SLIX2 single-block write/read/restore, ISO14443B / Type 4B NDEF write/read/restore, and generic NDEF write/read/restore on a writable Type 2 card are working at 100 kHz on ESP32 Dev Module for the validated hardware setup. ESP32-C3 with the official ESP32C3 Dev Module target is validated at 100 kHz for ST25R3916 I2C chip probe, S70 read/auth, ISO15693 card profiling, ISO15693 A/B/V scanning, ICODE SLIX2 block write/read/restore, and ISO15693 / Type 5 NDEF write/read/restore. The library is intended to support both ST25R3916 and ST25R3916B; validation records identify which chip was present in each hardware run. The MF1 S70 write test remains guarded by kEnableWriteTest and should only be enabled after validating the target board and I2C clock.`
