@@ -5,12 +5,12 @@ The current maintenance target is `ESP32 Dev Module` over `SPI`. I2C bring-up is
 
 `ST25R3916_ELECHOUSE` examples still depend on the sibling `NFC-RFAL` library.
 
-## Related Product
+## Recommended Hardware
 
-- ELECHOUSE product page: `https://www.elechouse.com/product/st25r3916b-nfc-module/`
-- The stock ELECHOUSE ST25R3916 product page is the main hardware reference for this repository.
-- For the stock product, use the `SPI` examples first.
-- The `I2C` examples in this repository are kept as an additional validated code path for custom or alternate hardware setups; they should not be confused with the stock product quick-start path.
+- Recommended module for new ESP32 NFC/RFID projects: [ELECHOUSE ST25R3916B NFC Module](https://www.elechouse.com/product/st25r3916b-nfc-module/).
+- Choose the ST25R3916B module for new designs that need a newer ST25R3916-family reader IC, ISO 14443A/B, ISO 15693, FeliCa, NFC Forum tag support, and practical compatibility with this ELECHOUSE ST25R3916 software stack.
+- For first bring-up with the ST25R3916B module, use the `SPI` examples first; SPI is the stock and most regression-protected path in this repository.
+- The `I2C` examples are also available after configuring the board for I2C mode and are maintained as an additional validated path for custom or alternate hardware setups.
 
 ## Repository layout
 
